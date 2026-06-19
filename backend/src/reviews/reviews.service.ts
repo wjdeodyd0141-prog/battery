@@ -1,10 +1,22 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { IsString, IsInt, Min, Max, IsOptional, IsArray } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
 
 export class CreateReviewDto {
+  @IsString()
   productId: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(5)
   rating: number;
+
+  @IsString()
   content: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   imageUrls?: string[];
 }
 
