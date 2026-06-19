@@ -137,7 +137,7 @@ export default function ProductOptionsPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <Link href="/admin/products" className="text-sm text-gray-400 hover:text-gray-600 block mb-1">← 상품 목록</Link>
+        <Link href="/admin/products" className="text-sm text-gray-400 hover:text-gray-600 block mb-1">상품 목록</Link>
         <h1 className="text-2xl font-bold text-gray-900">옵션 관리</h1>
         {productName && <p className="text-sm text-gray-500 mt-1">{productName}</p>}
       </div>

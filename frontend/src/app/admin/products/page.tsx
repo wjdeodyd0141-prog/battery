@@ -89,7 +89,7 @@ export default function AdminProductsPage() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Link href="/admin" className="text-sm text-gray-400 hover:text-gray-600">← 관리자 홈</Link>
+          <Link href="/admin" className="text-sm text-gray-400 hover:text-gray-600">관리자 홈</Link>
           <h1 className="text-2xl font-bold text-gray-900 mt-1">상품 관리</h1>
         </div>
         <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { setEditProduct(null); setShowModal(true); }}>

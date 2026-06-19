@@ -195,7 +195,7 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
                     disabled={changingStatus}
                     className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50"
                   >
-                    → {STATUS_META[nextStatus].label}로 변경
+                    {STATUS_META[nextStatus].label}로 변경
                   </button>
                 )}
                 {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && order.status !== 'REFUNDED' && (
@@ -640,7 +640,7 @@ export default function AdminOrdersPage() {
                             }}
                             className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors"
                           >
-                            → {STATUS_META[nextStatus].label}
+                            {STATUS_META[nextStatus].label}
                           </button>
                         ) : (
                           <button

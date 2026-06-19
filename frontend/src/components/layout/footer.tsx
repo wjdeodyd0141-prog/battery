@@ -65,7 +65,7 @@ export default async function Footer() {
               {categories.length > 5 && (
                 <li>
                   <Link href="/products" className="text-gray-600 hover:text-gray-400 transition-colors">
-                    전체 카테고리 보기 →
+                    전체 카테고리 보기
                   </Link>
                 </li>
               )}

@@ -125,7 +125,7 @@ export default function AdminCategoriesPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <Link href="/admin" className="text-sm text-gray-400 hover:text-gray-600">← 관리자 홈</Link>
+        <Link href="/admin" className="text-sm text-gray-400 hover:text-gray-600">관리자 홈</Link>
         <h1 className="text-2xl font-bold text-gray-900 mt-1">카테고리 관리</h1>
       </div>
 

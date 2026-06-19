@@ -145,7 +145,7 @@ export default function AdminBannersPage() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Link href="/admin" className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">← 관리자 홈</Link>
+          <Link href="/admin" className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">관리자 홈</Link>
           <h1 className="text-2xl font-bold text-gray-900">배너 관리</h1>
         </div>
         <Button onClick={openCreate} className="bg-blue-600 hover:bg-blue-700 gap-2">
