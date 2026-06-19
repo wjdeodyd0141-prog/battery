@@ -1,6 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
+import { Suspense } from 'react';
 import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -8,7 +9,7 @@ import { XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 
-export default function CheckoutFailPage() {
+function FailContent() {
   const searchParams = useSearchParams();
   const message = searchParams.get('message') || '결제가 취소되었거나 오류가 발생했습니다.';
   const orderId = searchParams.get('orderId');
@@ -35,5 +36,13 @@ export default function CheckoutFailPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutFailPage() {
+  return (
+    <Suspense>
+      <FailContent />
+    </Suspense>
   );
 }

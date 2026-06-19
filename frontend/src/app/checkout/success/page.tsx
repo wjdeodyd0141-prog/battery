@@ -1,6 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
+import { Suspense } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -11,7 +12,7 @@ import { useCart } from '@/lib/cart-context';
 import { Order } from '@/lib/types';
 import { toast } from 'sonner';
 
-export default function CheckoutSuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { clearCart, refresh } = useCart();
@@ -80,7 +81,6 @@ export default function CheckoutSuccessPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-12">
-      {/* 성공 헤더 */}
       <div className="text-center mb-8">
         <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle className="w-11 h-11 text-green-500" />
@@ -89,7 +89,6 @@ export default function CheckoutSuccessPage() {
         <p className="text-gray-500 mt-1.5">주문이 성공적으로 접수되었습니다.</p>
       </div>
 
-      {/* 주문 정보 카드 */}
       {order && (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-5 space-y-3">
           <div className="flex justify-between items-center text-sm">
@@ -111,7 +110,6 @@ export default function CheckoutSuccessPage() {
         </div>
       )}
 
-      {/* 다음 단계 안내 */}
       <div className="bg-blue-50 rounded-2xl p-5 mb-6">
         <p className="text-sm font-semibold text-blue-700 mb-3">앞으로의 진행 순서</p>
         <div className="space-y-2.5">
@@ -132,7 +130,6 @@ export default function CheckoutSuccessPage() {
         <p className="text-xs text-blue-500 mt-3">배송 현황은 마이페이지에서 실시간으로 확인할 수 있습니다.</p>
       </div>
 
-      {/* 버튼 */}
       <div className="flex gap-3">
         <Button asChild className="flex-1 bg-blue-600 hover:bg-blue-700 h-12 text-sm font-semibold whitespace-nowrap">
           <Link href="/my/orders" className="flex items-center justify-center gap-2">
@@ -148,5 +145,13 @@ export default function CheckoutSuccessPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense>
+      <SuccessContent />
+    </Suspense>
   );
 }
