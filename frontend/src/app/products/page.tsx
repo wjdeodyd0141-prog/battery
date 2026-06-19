@@ -4,7 +4,6 @@ import { Suspense } from 'react';
 import { api } from '@/lib/api';
 import { Product, Category } from '@/lib/types';
 import ProductCard from '@/components/products/product-card';
-import ProductFilters from '@/components/products/product-filters';
 import ProductPagination from '@/components/products/product-pagination';
 import ProductTopBar from '@/components/products/product-top-bar';
 import { Zap } from 'lucide-react';
@@ -68,19 +67,9 @@ export default async function ProductsPage({ searchParams }: PageProps) {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* 사이드바 */}
-          <aside className="w-full md:w-48 shrink-0">
-            <Suspense>
-              <ProductFilters
-                categories={categories}
-                activeCategory={searchParams.categoryId}
-              />
-            </Suspense>
-          </aside>
-
+        <div>
           {/* 메인 콘텐츠 */}
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0">
             {/* 상단 바: 개수 선택 + 검색 */}
             <Suspense>
               <ProductTopBar
@@ -128,3 +117,4 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     </div>
   );
 }
+
