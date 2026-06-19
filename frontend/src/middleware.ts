@@ -3,11 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 const COOKIE_NAME = 'site_auth';
 const COOKIE_VALUE = 'granted_vkdnjqodzm';
 
+const PUBLIC_PATHS = ['/site-auth', '/api/site-auth', '/_next', '/favicon.ico'];
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 인증 페이지와 API는 통과
-  if (pathname.startsWith('/site-auth') || pathname.startsWith('/api/site-auth')) {
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
@@ -16,11 +17,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const loginUrl = new URL('/site-auth', request.url);
-  loginUrl.searchParams.set('from', pathname);
+  const loginUrl = request.nextUrl.clone();
+  loginUrl.pathname = '/site-auth';
+  loginUrl.search = `from=${encodeURIComponent(pathname)}`;
   return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: '/:path*',
 };
