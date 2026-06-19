@@ -14,9 +14,9 @@ COPY backend/tsconfig.build.json /app/tsconfig.build.json
 
 RUN npx prisma generate
 
-RUN rm -rf /app/dist && ./node_modules/.bin/tsc -p tsconfig.build.json
+RUN npx nest build
 
-RUN echo "=== dist contents ===" && ls -la /app/dist/ && echo "=== main.js check ===" && ls /app/dist/main.js
+RUN echo "=== dist/main.js ===" && ls /app/dist/main.js
 
 EXPOSE 3001
 
