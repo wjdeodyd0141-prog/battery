@@ -14,4 +14,4 @@ RUN npm run build && echo "=== dist contents ===" && ls -la dist/
 
 EXPOSE 3001
 
-CMD ["node", "/app/dist/main.js"]
+CMD ["sh", "-c", "echo '=== CHECKING /app/dist ===' && ls /app/dist 2>/dev/null && node /app/dist/main.js || (echo 'dist not found, checking /app:' && ls /app && exit 1)"]
