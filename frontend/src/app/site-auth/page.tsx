@@ -41,7 +41,7 @@ function AuthForm() {
           <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-4">
             <Zap className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900">파워뱅크 전시장</h1>
+          <h1 className="text-xl font-bold text-gray-900">테스트중입니다</h1>
           <p className="text-sm text-gray-400 mt-1">비밀번호를 입력해주세요</p>
         </div>
 
