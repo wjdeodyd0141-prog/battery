@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum InquiryStatus {
+  PENDING
+  ANSWERED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  name      String?
+  phone     String?
+  address   String?
+  role               Role      @default(USER)
+  termsAgreedAt      DateTime?
+  privacyAgreedAt    DateTime?
+  marketingAgreedAt  DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  orders         Order[]
+  cart           Cart?
+  reviews        Review[]
+  inquiries      Inquiry[]
+  inquiryReplies InquiryReply[]
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  price       Int
+  stock       Int      @default(0)
+  imageUrls       String[]
+  detailImageUrls String[]
+  isActive        Boolean  @default(true)
+  categoryId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category      Category             @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
+  cartItems     CartItem[]
+  reviews       Review[]
+  optionGroups  ProductOptionGroup[]
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+}
+
+model CartItem {
+  id              String   @id @default(cuid())
+  cartId          String
+  productId       String
+  quantity        Int      @default(1)
+  optionPrice     Int      @default(0)
+  selectedOptions Json?
+  optionKey       String   @default("")
+  createdAt       DateTime @default(now())
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId, optionKey])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  status          OrderStatus @default(PENDING)
+  totalAmount     Int
+  shippingAddress String
+  receiverName    String
+  receiverPhone   String
+  paymentKey      String?
+  orderId         String?     @unique
+  paidAt          DateTime?
+  trackingNumber  String?
+  carrier         String?
+  adminMemo       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+}
+
+model OrderItem {
+  id              String @id @default(cuid())
+  orderId         String
+  productId       String
+  quantity        Int
+  price           Int
+  optionPrice     Int    @default(0)
+  selectedOptions Json?
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Inquiry {
+  id        String        @id @default(cuid())
+  userId    String
+  title     String
+  content   String
+  isSecret  Boolean       @default(false)
+  status    InquiryStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user  User          @relation(fields: [userId], references: [id])
+  reply InquiryReply?
+}
+
+model InquiryReply {
+  id        String   @id @default(cuid())
+  inquiryId String   @unique
+  adminId   String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inquiry Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  admin   User    @relation(fields: [adminId], references: [id])
+}
+
+model ProductOptionGroup {
+  id        String          @id @default(cuid())
+  productId String
+  name      String
+  required  Boolean         @default(true)
+  order     Int             @default(0)
+
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  options ProductOption[]
+}
+
+model ProductOption {
+  id      String @id @default(cuid())
+  groupId String
+  name    String
+  price   Int    @default(0)
+  order   Int    @default(0)
+
+  group ProductOptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+model Popup {
+  id        String    @id @default(cuid())
+  title     String
+  imageUrl  String?
+  content   String?
+  linkUrl   String?
+  isActive  Boolean   @default(true)
+  startAt   DateTime?
+  endAt     DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Banner {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  linkUrl   String?
+  title     String?
+  subtitle  String?
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  rating    Int
+  content   String
+  imageUrls String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
