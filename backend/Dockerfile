@@ -2,16 +2,22 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-COPY backend/package*.json ./
-COPY backend/prisma ./prisma/
+COPY backend/package.json /app/package.json
+COPY backend/prisma /app/prisma/
 
 RUN npm install
 
-COPY backend/ .
+COPY backend/src /app/src/
+COPY backend/nest-cli.json /app/nest-cli.json
+COPY backend/tsconfig.json /app/tsconfig.json
+COPY backend/tsconfig.build.json /app/tsconfig.build.json
 
 RUN npx prisma generate
-RUN npm run build && echo "=== dist contents ===" && ls -la dist/
+
+RUN rm -rf /app/dist && npx nest build
+
+RUN echo "=== dist contents ===" && ls -la /app/dist/
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "echo '=== CHECKING /app/dist ===' && ls /app/dist 2>/dev/null && node /app/dist/main.js || (echo 'dist not found, checking /app:' && ls /app && exit 1)"]
+CMD ["node", "/app/dist/main.js"]
