@@ -17,7 +17,7 @@ const QUICK_MENU = [
 ];
 
 export default function MyPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const router = useRouter();
   const [form, setForm] = useState({ name: '', phone: '', address: '' });
   const [saving, setSaving] = useState(false);
@@ -33,6 +33,7 @@ export default function MyPage() {
     setSaving(true);
     try {
       await api.patch('/users/profile', form);
+      await refreshUser();
       toast.success('프로필이 저장되었습니다.');
       setEditing(false);
     } catch (err: any) {
