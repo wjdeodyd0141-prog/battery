@@ -35,7 +35,7 @@ function AuthForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 bg-gray-50 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-4">
