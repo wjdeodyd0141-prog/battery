@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Minus, Plus, Trash2, ShoppingCart, Zap, ArrowRight } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingCart, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/lib/cart-context';
@@ -146,7 +146,7 @@ export default function CartPage() {
             </div>
             <Button className="w-full h-12 bg-blue-600 hover:bg-blue-700 font-semibold text-base" asChild>
               <Link href="/checkout">
-                결제하기 <ArrowRight className="ml-2 w-4 h-4" />
+                결제하기
               </Link>
             </Button>
             <Button variant="outline" className="w-full mt-2" asChild>
