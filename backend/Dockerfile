@@ -10,8 +10,8 @@ RUN npm install
 COPY backend/ .
 
 RUN npx prisma generate
-RUN npm run build
+RUN npm run build && echo "=== dist contents ===" && ls -la dist/
 
 EXPOSE 3001
 
-CMD ["node", "dist/main"]
+CMD ["node", "/app/dist/main.js"]
