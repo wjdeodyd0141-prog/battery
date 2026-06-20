@@ -33,9 +33,9 @@ export default function MyPage() {
     setSaving(true);
     try {
       await api.patch('/users/profile', form);
-      await refreshUser();
       toast.success('프로필이 저장되었습니다.');
       setEditing(false);
+      refreshUser().catch(() => {});
     } catch (err: any) {
       toast.error(err.message || '오류가 발생했습니다.');
     } finally {

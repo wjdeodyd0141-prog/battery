@@ -57,8 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
-    const fresh = await api.get<User>('/auth/me');
-    setUser(fresh);
+    try {
+      const fresh = await api.get<User>('/auth/me');
+      setUser(fresh);
+    } catch {
+      // 백그라운드 갱신 실패는 무시 — 프로필 저장 자체는 성공
+    }
   };
 
   return (
