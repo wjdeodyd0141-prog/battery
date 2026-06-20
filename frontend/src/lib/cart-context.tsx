@@ -18,11 +18,10 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [cart, setCart] = useState<Cart | null>(null);
 
   const refresh = async () => {
-    if (!user) { setCart(null); return; }
     try {
       const data = await api.get<Cart>('/cart');
       setCart(data);
@@ -31,7 +30,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  useEffect(() => { refresh(); }, [user]);
+  // /auth/me와 병렬로 장바구니 선제 로딩 (토큰 존재 시)
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (token) refresh();
+  }, []);
+
+  // 로그아웃 시 장바구니 초기화
+  useEffect(() => {
+    if (!loading && !user) setCart(null);
+  }, [loading, user]);
 
   const addItem = async (productId: string, quantity = 1, selectedOptions?: SelectedOption[]) => {
     await api.post('/cart/items', { productId, quantity, selectedOptions });
