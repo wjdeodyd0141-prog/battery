@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request, Query } from '@nestjs/common';
-import type { CreateOrderDto } from './orders.service';
-import { OrdersService } from './orders.service';
+import { Throttle } from '@nestjs/throttler';
+import { CreateOrderDto, OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -61,6 +61,7 @@ export class OrdersController {
     return this.ordersService.deletePendingOrder(id, req.user.id);
   }
 
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @Post()
   createOrder(@Request() req, @Body() dto: CreateOrderDto) {
     return this.ordersService.createOrder(req.user.id, dto);

@@ -9,8 +9,9 @@ export class PaymentsController {
 
   @Post('confirm')
   confirm(
+    @Request() req,
     @Body() body: { paymentKey: string; orderId: string; amount: number },
   ) {
-    return this.paymentsService.confirmPayment(body.paymentKey, body.orderId, body.amount);
+    return this.paymentsService.confirmPayment(req.user.id, body.paymentKey, body.orderId, body.amount);
   }
 }

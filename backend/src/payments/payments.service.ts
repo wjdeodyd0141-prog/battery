@@ -1,5 +1,6 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
 import { OrdersService } from '../orders/orders.service';
 
 @Injectable()
@@ -8,12 +9,16 @@ export class PaymentsService {
 
   constructor(
     private configService: ConfigService,
+    private prisma: PrismaService,
     private ordersService: OrdersService,
   ) {
     this.tossSecretKey = this.configService.get<string>('TOSS_SECRET_KEY') as string;
   }
 
-  async confirmPayment(paymentKey: string, orderId: string, amount: number) {
+  async confirmPayment(userId: string, paymentKey: string, orderId: string, amount: number) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
+    if (order.userId !== userId) throw new ForbiddenException('권한이 없습니다.');
     const encodedKey = Buffer.from(`${this.tossSecretKey}:`).toString('base64');
 
     const response = await fetch('https://api.tosspayments.com/v1/payments/confirm', {

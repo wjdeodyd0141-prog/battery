@@ -17,8 +17,9 @@ async function bootstrap() {
         'http://localhost:3002',
         'http://localhost:3003',
         process.env.FRONTEND_URL,
-      ].filter(Boolean);
-      if (!origin || allowed.includes(origin) || origin.endsWith('.vercel.app')) {
+        process.env.FRONTEND_URL_2, // 커스텀 도메인 추가 시 사용
+      ].filter(Boolean) as string[];
+      if (!origin || allowed.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
