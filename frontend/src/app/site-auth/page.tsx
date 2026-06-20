@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { Zap } from 'lucide-react';
 
 function AuthForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get('from') || '/';
   const [password, setPassword] = useState('');
@@ -25,8 +24,7 @@ function AuthForm() {
     });
 
     if (res.ok) {
-      router.push(from);
-      router.refresh();
+      window.location.href = from;
     } else {
       const data = await res.json();
       setError(data.error || '비밀번호가 틀렸습니다.');
