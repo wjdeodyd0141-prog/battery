@@ -47,6 +47,7 @@ function SuccessContent() {
         setError(err.message || '결제 확인 중 오류가 발생했습니다.');
         setStep('error');
       });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (step === 'confirming') {
@@ -101,11 +102,11 @@ function SuccessContent() {
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-500">받는 분</span>
-            <span className="font-medium text-gray-800">{order.receiverName}</span>
+            <span className="font-medium text-gray-800">{order.receiverName ?? '-'}</span>
           </div>
           <div className="flex justify-between items-start text-sm gap-4">
             <span className="text-gray-500 shrink-0">배송지</span>
-            <span className="font-medium text-gray-800 text-right">{order.shippingAddress}</span>
+            <span className="font-medium text-gray-800 text-right">{order.shippingAddress ?? '-'}</span>
           </div>
         </div>
       )}

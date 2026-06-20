@@ -16,9 +16,11 @@ export class PaymentsService {
   }
 
   async confirmPayment(userId: string, paymentKey: string, orderId: string, amount: number) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
-    if (order.userId !== userId) throw new ForbiddenException('권한이 없습니다.');
+    if (!this.tossSecretKey) throw new BadRequestException('결제 키가 설정되지 않았습니다. 관리자에게 문의하세요.');
+
+    const existingOrder = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!existingOrder) throw new NotFoundException('주문을 찾을 수 없습니다.');
+    if (existingOrder.userId !== userId) throw new ForbiddenException('권한이 없습니다.');
     const encodedKey = Buffer.from(`${this.tossSecretKey}:`).toString('base64');
 
     const response = await fetch('https://api.tosspayments.com/v1/payments/confirm', {

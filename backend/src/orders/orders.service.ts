@@ -80,12 +80,15 @@ export class OrdersService {
 
     // 결제 확인 + 재고 차감을 트랜잭션으로 처리
     return this.prisma.$transaction(async (tx) => {
-      // 재고 차감
+      // 재고 차감 (atomic: stock >= quantity 조건 만족할 때만 차감)
       for (const item of order.items) {
-        await tx.product.update({
-          where: { id: item.productId },
+        const updated = await tx.product.updateMany({
+          where: { id: item.productId, stock: { gte: item.quantity } },
           data: { stock: { decrement: item.quantity } },
         });
+        if (updated.count === 0) {
+          throw new BadRequestException('재고가 부족합니다.');
+        }
       }
 
       // 장바구니 비우기
@@ -97,6 +100,7 @@ export class OrdersService {
       return tx.order.update({
         where: { id: orderId },
         data: { status: 'PAID', paymentKey, paidAt: new Date() },
+        include: { items: { include: { product: true } } },
       });
     });
   }
