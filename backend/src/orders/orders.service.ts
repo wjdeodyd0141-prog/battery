@@ -227,6 +227,58 @@ export class OrdersService {
     });
   }
 
+  async refundOrder(orderId: string, cancelReason: string, cancelAmount?: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    });
+    if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
+    if (!['PAID', 'PREPARING', 'SHIPPED', 'DELIVERED'].includes(order.status)) {
+      throw new BadRequestException('환불 가능한 상태가 아닙니다.');
+    }
+    if (!order.paymentKey) {
+      throw new BadRequestException('결제 정보가 없어 환불할 수 없습니다.');
+    }
+
+    const tossSecretKey = this.configService.get<string>('TOSS_SECRET_KEY') ?? '';
+    if (!tossSecretKey) throw new BadRequestException('결제 키가 설정되지 않았습니다.');
+
+    const encodedKey = Buffer.from(`${tossSecretKey}:`).toString('base64');
+    const body: Record<string, unknown> = { cancelReason };
+    if (cancelAmount && cancelAmount > 0) body.cancelAmount = cancelAmount;
+
+    const response = await fetch(
+      `https://api.tosspayments.com/v1/payments/${order.paymentKey}/cancel`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Basic ${encodedKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      },
+    );
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new BadRequestException(err.message || '토스페이먼츠 환불 요청에 실패했습니다.');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      for (const item of order.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
+      return tx.order.update({
+        where: { id: orderId },
+        data: { status: 'REFUNDED' },
+        include: {
+          items: { include: { product: true } },
+          user: { select: { id: true, username: true, name: true, email: true, phone: true } },
+        },
+      });
+    });
+  }
+
   async getAllOrders(query: OrderQueryDto = {}) {
     const { status, search, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;

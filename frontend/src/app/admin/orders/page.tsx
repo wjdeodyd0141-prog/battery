@@ -106,6 +106,29 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
   const [changingStatus, setChangingStatus] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<OrderStatus | null>(null);
+  const [showRefundDialog, setShowRefundDialog] = useState(false);
+  const [refundReason, setRefundReason] = useState('');
+  const [refundAmount, setRefundAmount] = useState('');
+  const [processingRefund, setProcessingRefund] = useState(false);
+
+  const handleRefund = async () => {
+    if (!refundReason.trim()) { toast.error('환불 사유를 입력해주세요.'); return; }
+    setProcessingRefund(true);
+    try {
+      const body: { cancelReason: string; cancelAmount?: number } = { cancelReason: refundReason };
+      if (refundAmount && Number(refundAmount) > 0) body.cancelAmount = Number(refundAmount);
+      const updated = await api.post<Order>(`/orders/${order.id}/refund`, body);
+      onUpdate({ ...order, ...updated });
+      toast.success('환불 처리가 완료되었습니다.');
+      setShowRefundDialog(false);
+      setRefundReason('');
+      setRefundAmount('');
+    } catch (err: any) {
+      toast.error(err.message || '환불 처리에 실패했습니다.');
+    } finally {
+      setProcessingRefund(false);
+    }
+  };
 
   const handleStatusChange = async (newStatus: OrderStatus) => {
     if (newStatus === 'CANCELLED' || newStatus === 'REFUNDED') {
@@ -209,9 +232,9 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
                 )}
                 {(order.status === 'DELIVERED' || order.status === 'PAID') && (
                   <button
-                    onClick={() => handleStatusChange('REFUNDED')}
+                    onClick={() => setShowRefundDialog(true)}
                     disabled={changingStatus}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-semibold rounded-xl transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-white border border-orange-200 text-orange-600 hover:bg-orange-50 text-sm font-semibold rounded-xl transition-colors disabled:opacity-50"
                   >
                     <RefreshCw className="w-4 h-4" /> 환불 처리
                   </button>
@@ -239,6 +262,46 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
                 <div className="flex gap-2 shrink-0">
                   <button onClick={() => applyStatus(pendingStatus)} className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg">확인</button>
                   <button onClick={() => { setShowCancelConfirm(false); setPendingStatus(null); }} className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs font-semibold rounded-lg">취소</button>
+                </div>
+              </div>
+            )}
+
+            {showRefundDialog && (
+              <div className="mt-3 p-4 bg-orange-50 border border-orange-200 rounded-xl space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-orange-700">
+                  <RefreshCw className="w-4 h-4" /> 환불 처리 (토스페이먼츠 실제 환불)
+                </div>
+                <input
+                  type="text"
+                  placeholder="환불 사유 입력 (필수)"
+                  value={refundReason}
+                  onChange={e => setRefundReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-orange-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 bg-white"
+                />
+                <input
+                  type="number"
+                  placeholder={`환불 금액 (비워두면 전액 ${order.totalAmount.toLocaleString()}원 환불)`}
+                  value={refundAmount}
+                  onChange={e => setRefundAmount(e.target.value)}
+                  min={1}
+                  max={order.totalAmount}
+                  className="w-full px-3 py-2 border border-orange-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 bg-white"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => { setShowRefundDialog(false); setRefundReason(''); setRefundAmount(''); }}
+                    disabled={processingRefund}
+                    className="px-4 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs font-semibold rounded-lg"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleRefund}
+                    disabled={processingRefund}
+                    className="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg disabled:opacity-50"
+                  >
+                    {processingRefund ? '처리 중...' : '환불 확인'}
+                  </button>
                 </div>
               </div>
             )}

@@ -69,6 +69,16 @@ export class OrdersController {
 
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
+  @Post(':id/refund')
+  refundOrder(
+    @Param('id') id: string,
+    @Body() body: { cancelReason: string; cancelAmount?: number },
+  ) {
+    return this.ordersService.refundOrder(id, body.cancelReason, body.cancelAmount);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body() body: { status: string }) {
     return this.ordersService.updateStatus(id, body.status);
