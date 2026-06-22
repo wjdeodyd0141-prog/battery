@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { Product, Category } from '@/lib/types';
 import ProductCard from '@/components/products/product-card';
 import HomeInquirySection from '@/components/home/inquiry-section';
+import HomeFaqSection from '@/components/home/faq-section';
 import BannerSlider from '@/components/home/banner-slider';
 import PopupManager from '@/components/home/popup-manager';
 
@@ -162,6 +163,9 @@ export default async function HomePage() {
 
       {/* 문의게시판 */}
       <HomeInquirySection />
+
+      {/* 자주 묻는 질문 */}
+      <HomeFaqSection />
     </div>
   );
 }
