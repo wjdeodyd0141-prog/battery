@@ -168,7 +168,7 @@ export default function InquiryPage() {
             <Pagination current={page} total={totalPages} onChange={handlePageChange} />
           </>
         )}
-      </div>
+
         {/* FAQ 섹션 */}
         {faqs.length > 0 && (
           <div className="mt-10">
