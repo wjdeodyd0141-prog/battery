@@ -16,6 +16,7 @@ import { InquiriesModule } from './inquiries/inquiries.module';
 import { BannersModule } from './banners/banners.module';
 import { ProductOptionsModule } from './product-options/product-options.module';
 import { PopupsModule } from './popups/popups.module';
+import { FaqsModule } from './faqs/faqs.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { PopupsModule } from './popups/popups.module';
     BannersModule,
     ProductOptionsModule,
     PopupsModule,
+    FaqsModule,
   ],
   providers: [
     // 모든 라우트에 Rate Limit 적용

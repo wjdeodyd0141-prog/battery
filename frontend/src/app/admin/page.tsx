@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Package, Tag, Users, ShoppingBag, MessageSquare, ImagePlay, Layers, ChevronRight } from 'lucide-react';
+import { Package, Tag, Users, ShoppingBag, MessageSquare, ImagePlay, Layers, ChevronRight, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 const menus = [
@@ -14,6 +14,7 @@ const menus = [
   { href: '/admin/orders', icon: ShoppingBag, title: '주문 관리', desc: '전체 주문 현황 확인' },
   { href: '/admin/users', icon: Users, title: '회원 관리', desc: '회원 목록 조회' },
   { href: '/admin/inquiry', icon: MessageSquare, title: '문의 관리', desc: '고객 문의 확인 및 답변' },
+  { href: '/admin/faq', icon: HelpCircle, title: 'FAQ 관리', desc: '자주 묻는 질문 등록/수정/삭제' },
 ];
 
 export default function AdminPage() {

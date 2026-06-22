@@ -3,11 +3,18 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MessageSquare, Plus, Lock, ChevronRight, CheckCircle, Clock } from 'lucide-react';
+import { MessageSquare, Plus, Lock, ChevronRight, CheckCircle, Clock, HelpCircle, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { Inquiry } from '@/lib/types';
 import Pagination from '@/components/ui/pagination';
+
+interface Faq {
+  id: string;
+  question: string;
+  answer: string;
+  order: number;
+}
 
 const PAGE_SIZE = 10;
 
@@ -28,6 +35,12 @@ export default function InquiryPage() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [fetching, setFetching] = useState(true);
   const [page, setPage] = useState(1);
+  const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [openFaqId, setOpenFaqId] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get<Faq[]>('/faqs').then(setFaqs).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) { router.push('/login'); return; }
@@ -154,6 +167,39 @@ export default function InquiryPage() {
 
             <Pagination current={page} total={totalPages} onChange={handlePageChange} />
           </>
+        )}
+      </div>
+        {/* FAQ 섹션 */}
+        {faqs.length > 0 && (
+          <div className="mt-10">
+            <div className="flex items-center gap-2 mb-4">
+              <HelpCircle className="w-5 h-5 text-blue-600" />
+              <h2 className="text-base font-bold text-gray-900">자주 묻는 질문</h2>
+              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{faqs.length}개</span>
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50 overflow-hidden">
+              {faqs.map((faq, idx) => (
+                <div key={faq.id}>
+                  <button
+                    onClick={() => setOpenFaqId(openFaqId === faq.id ? null : faq.id)}
+                    className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-gray-50 transition-colors group"
+                  >
+                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full shrink-0">Q{idx + 1}</span>
+                    <span className="flex-1 text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{faq.question}</span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${openFaqId === faq.id ? 'rotate-180' : ''}`} />
+                  </button>
+                  {openFaqId === faq.id && (
+                    <div className="px-5 pb-4 pt-1 bg-blue-50/50">
+                      <div className="flex gap-3">
+                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full shrink-0 h-fit">A</span>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{faq.answer}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>
