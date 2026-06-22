@@ -45,14 +45,16 @@ export default function HomeFaqSection() {
                 <span className="flex-1 font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{faq.question}</span>
                 <ChevronDown className={`w-5 h-5 text-gray-400 shrink-0 transition-transform duration-200 ${openId === faq.id ? 'rotate-180' : ''}`} />
               </button>
-              {openId === faq.id && (
-                <div className="px-6 pb-5 pt-1 bg-blue-50/40">
-                  <div className="flex gap-3">
-                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full shrink-0 h-fit mt-0.5">A</span>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{faq.answer}</p>
+              <div className={`grid transition-all duration-300 ease-in-out ${openId === faq.id ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                <div className="overflow-hidden">
+                  <div className="px-6 pb-5 pt-1 bg-blue-50/40">
+                    <div className="flex gap-3">
+                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full shrink-0 h-fit mt-0.5">A</span>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{faq.answer}</p>
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           ))}
         </div>

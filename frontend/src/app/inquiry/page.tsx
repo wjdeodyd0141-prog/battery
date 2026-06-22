@@ -188,14 +188,16 @@ export default function InquiryPage() {
                     <span className="flex-1 text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{faq.question}</span>
                     <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${openFaqId === faq.id ? 'rotate-180' : ''}`} />
                   </button>
-                  {openFaqId === faq.id && (
-                    <div className="px-5 pb-4 pt-1 bg-blue-50/50">
-                      <div className="flex gap-3">
-                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full shrink-0 h-fit">A</span>
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{faq.answer}</p>
+                  <div className={`grid transition-all duration-300 ease-in-out ${openFaqId === faq.id ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                    <div className="overflow-hidden">
+                      <div className="px-5 pb-4 pt-1 bg-blue-50/50">
+                        <div className="flex gap-3">
+                          <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full shrink-0 h-fit">A</span>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{faq.answer}</p>
+                        </div>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>
