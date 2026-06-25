@@ -17,6 +17,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
 
+  const handleKakaoLogin = () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    window.location.href = `${apiUrl}/auth/kakao`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.username.trim()) { toast.error('아이디를 입력해주세요.'); return; }
@@ -123,7 +128,27 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-sm text-gray-500 text-center mt-6">
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-gray-50 px-3 text-gray-400">또는</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleKakaoLogin}
+            className="w-full h-11 flex items-center justify-center gap-2.5 bg-[#FEE500] hover:bg-[#f0d800] rounded-xl font-semibold text-[#000000] text-sm transition-colors"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fillRule="evenodd" clipRule="evenodd" d="M9 1.5C4.858 1.5 1.5 4.134 1.5 7.387c0 2.07 1.3 3.889 3.27 4.963l-.834 3.113a.281.281 0 0 0 .432.305L8.1 13.524c.294.04.593.063.9.063 4.142 0 7.5-2.634 7.5-5.887C16.5 4.134 13.142 1.5 9 1.5z" fill="#000000"/>
+            </svg>
+            카카오로 로그인
+          </button>
+
+          <p className="text-sm text-gray-500 text-center mt-4">
             아직 회원이 아니신가요?{' '}
             <Link href="/register" className="text-blue-600 hover:underline font-semibold">
               회원가입

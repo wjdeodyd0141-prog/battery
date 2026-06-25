@@ -28,9 +28,10 @@ enum OrderStatus {
 
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
+  email     String?  @unique
   username  String   @unique
-  password  String
+  password  String?
+  kakaoId   String?  @unique
   name      String?
   phone     String?
   address   String?
