@@ -2,15 +2,15 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-COPY backend/package.json /app/package.json
-COPY backend/prisma /app/prisma/
+COPY package.json /app/package.json
+COPY prisma /app/prisma/
 
 RUN npm install
 
-COPY backend/src /app/src/
-COPY backend/nest-cli.json /app/nest-cli.json
-COPY backend/tsconfig.json /app/tsconfig.json
-COPY backend/tsconfig.build.json /app/tsconfig.build.json
+COPY src /app/src/
+COPY nest-cli.json /app/nest-cli.json
+COPY tsconfig.json /app/tsconfig.json
+COPY tsconfig.build.json /app/tsconfig.build.json
 
 RUN npx prisma generate
 
