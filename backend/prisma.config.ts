@@ -3,9 +3,12 @@ import { defineConfig } from "prisma/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
-// Prisma v7: 직접 연결 대신 PrismaPg 어댑터 사용 (Railway에서 db push 연결 문제 해결)
+// Prisma v7: datasource.url(스키마 비교용) + migrate.adapter(실제 연결용) 모두 필요
 export default defineConfig({
   schema: "prisma/schema.prisma",
+  datasource: {
+    url: process.env.DATABASE_URL,
+  },
   migrate: {
     async adapter() {
       const pool = new Pool({
