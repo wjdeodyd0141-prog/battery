@@ -12,6 +12,8 @@ COPY nest-cli.json /app/nest-cli.json
 COPY tsconfig.json /app/tsconfig.json
 COPY tsconfig.build.json /app/tsconfig.build.json
 
+# 빌드 시 prisma generate에만 필요한 임시 URL (실제 연결 안 함)
+ENV DATABASE_URL="postgresql://dummy:dummy@dummy:5432/dummy"
 RUN npx prisma generate
 
 RUN npx nest build
