@@ -20,4 +20,4 @@ RUN echo "=== dist/main.js ===" && ls /app/dist/main.js
 
 EXPOSE 3001
 
-CMD ["node", "/app/dist/main.js"]
+CMD ["sh", "-c", "npx prisma db push && node /app/dist/main.js"]
