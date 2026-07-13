@@ -2,6 +2,10 @@ FROM node:22-alpine
 
 WORKDIR /app
 
+# 빌드 단계에서 prisma generate에 필요한 임시 DB 주소 (실제 연결 안 함)
+ARG DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres"
+ENV DATABASE_URL=$DATABASE_URL
+
 COPY package.json /app/package.json
 COPY prisma /app/prisma/
 
@@ -12,8 +16,6 @@ COPY nest-cli.json /app/nest-cli.json
 COPY tsconfig.json /app/tsconfig.json
 COPY tsconfig.build.json /app/tsconfig.build.json
 
-# 빌드 시 prisma generate에만 필요한 임시 URL (실제 연결 안 함)
-ENV DATABASE_URL="postgresql://dummy:dummy@dummy:5432/dummy"
 RUN npx prisma generate
 
 RUN npx nest build
