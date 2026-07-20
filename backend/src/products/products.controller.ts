@@ -16,13 +16,31 @@ export class ProductsController {
   findAll(
     @Query('category') category?: string,
     @Query('search') search?: string,
-    @Query('admin') admin?: string,
+    @Query('sort') sort?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    // VULN-06: 공개 엔드포인트는 항상 isActive:true 필터 적용
+    return this.productsService.findAll(
+      category, search, false, sort,
+      page ? Number(page) : undefined,
+      limit ? Number(limit) : undefined,
+    );
+  }
+
+  // VULN-06: 어드민 전용 엔드포인트 (숨김 상품 포함)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Get('admin-list')
+  findAllAdmin(
+    @Query('category') category?: string,
+    @Query('search') search?: string,
     @Query('sort') sort?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     return this.productsService.findAll(
-      category, search, admin === 'true', sort,
+      category, search, true, sort,
       page ? Number(page) : undefined,
       limit ? Number(limit) : undefined,
     );

@@ -6,9 +6,13 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // VULN-10: Railway 리버스 프록시 뒤에서 실제 클라이언트 IP 추출
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   // HTTP 보안 헤더 (클릭재킹·XSS·MIME 스니핑 방지)
   app.use((helmet as any).default());
 
+  // VULN-13: Origin 없는 요청은 내부 도구·헬스체크용으로만 허용 (실 공격 위험 낮음)
   app.enableCors({
     origin: (origin, callback) => {
       const allowed = [
@@ -17,7 +21,7 @@ async function bootstrap() {
         'http://localhost:3002',
         'http://localhost:3003',
         process.env.FRONTEND_URL,
-        process.env.FRONTEND_URL_2, // 커스텀 도메인 추가 시 사용
+        process.env.FRONTEND_URL_2,
       ].filter(Boolean) as string[];
       if (!origin || allowed.includes(origin)) {
         callback(null, true);

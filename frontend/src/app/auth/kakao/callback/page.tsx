@@ -13,20 +13,22 @@ function KakaoCallbackInner() {
   const { loginWithToken } = useAuth();
 
   useEffect(() => {
-    const token = searchParams.get('token');
+    // VULN-03: URL에 token 대신 일회성 code를 받아 서버에서 교환
+    const code = searchParams.get('code');
     const error = searchParams.get('error');
 
-    if (error || !token) {
+    if (error || !code) {
       router.replace('/login');
       return;
     }
 
-    localStorage.setItem('accessToken', token);
-
-    api.get<User>('/auth/me')
-      .then((user) => {
-        loginWithToken(token, user);
-        router.replace('/');
+    api.get<{ accessToken: string }>(`/auth/kakao/exchange?code=${code}`)
+      .then(({ accessToken }) => {
+        localStorage.setItem('accessToken', accessToken);
+        return api.get<User>('/auth/me').then((user) => {
+          loginWithToken(accessToken, user);
+          router.replace('/');
+        });
       })
       .catch(() => {
         localStorage.removeItem('accessToken');

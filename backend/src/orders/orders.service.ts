@@ -34,27 +34,41 @@ export class OrdersService {
   ) {}
 
   async createOrder(userId: string, dto: CreateOrderDto) {
+    // VULN-01: 상품과 옵션 정보를 DB에서 직접 조회
     const products = await this.prisma.product.findMany({
       where: { id: { in: dto.items.map(i => i.productId) } },
+      include: { optionGroups: { include: { options: true } } },
     });
 
     let itemsTotal = 0;
     const orderItems = dto.items.map(item => {
       const product = products.find(p => p.id === item.productId);
       if (!product) throw new NotFoundException(`상품 ${item.productId}을 찾을 수 없습니다.`);
+      if (!product.isActive) throw new BadRequestException(`${product.name}은 판매 중지된 상품입니다.`);
       if (product.stock < item.quantity) throw new BadRequestException(`${product.name} 재고가 부족합니다.`);
-      const optionPrice = item.optionPrice ?? 0;
-      itemsTotal += (product.price + optionPrice) * item.quantity;
+
+      // VULN-01: 클라이언트 optionPrice 무시 — DB에서 직접 계산
+      let serverOptionPrice = 0;
+      if (item.selectedOptions?.length) {
+        for (const sel of item.selectedOptions) {
+          const group = product.optionGroups.find(g => g.id === sel.groupId);
+          const option = group?.options.find(o => o.id === sel.optionId);
+          if (option) serverOptionPrice += option.price;
+        }
+      }
+
+      itemsTotal += (product.price + serverOptionPrice) * item.quantity;
       return {
         productId: item.productId,
         quantity: item.quantity,
         price: product.price,
-        optionPrice,
+        optionPrice: serverOptionPrice,
         selectedOptions: (item.selectedOptions ?? []) as any,
       };
     });
 
-    const shippingFee = dto.shippingFee ?? (itemsTotal >= 30000 ? 0 : 3000);
+    // VULN-01: shippingFee도 서버에서 계산 (클라이언트 값 무시)
+    const shippingFee = itemsTotal >= 30000 ? 0 : 3000;
     const totalAmount = itemsTotal + shippingFee;
 
     return this.prisma.order.create({

@@ -1,16 +1,97 @@
 import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
+// VULN-11: 로그인 실패 추적 (계정 잠금)
+interface LoginAttempt { count: number; lockedUntil: number; }
+
+// VULN-03: 카카오 OAuth 일회성 코드 저장
+interface OAuthCode { token: string; expiresAt: number; }
+
 @Injectable()
 export class AuthService {
+  // VULN-11
+  private readonly failedLogins = new Map<string, LoginAttempt>();
+  private readonly MAX_ATTEMPTS = 5;
+  private readonly LOCK_DURATION = 15 * 60 * 1000;
+
+  // VULN-03
+  private readonly oauthCodes = new Map<string, OAuthCode>();
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
+
+  // VULN-11: 잠금 여부 확인
+  private checkLock(username: string) {
+    const a = this.failedLogins.get(username);
+    if (a && a.lockedUntil > Date.now()) {
+      const mins = Math.ceil((a.lockedUntil - Date.now()) / 60000);
+      throw new UnauthorizedException(`계정이 잠겼습니다. ${mins}분 후 다시 시도해주세요.`);
+    }
+  }
+
+  private recordFail(username: string) {
+    const a = this.failedLogins.get(username) ?? { count: 0, lockedUntil: 0 };
+    a.count += 1;
+    if (a.count >= this.MAX_ATTEMPTS) {
+      a.lockedUntil = Date.now() + this.LOCK_DURATION;
+      a.count = 0;
+    }
+    this.failedLogins.set(username, a);
+  }
+
+  private clearFail(username: string) {
+    this.failedLogins.delete(username);
+  }
+
+  // VULN-03: 카카오 OAuth 일회성 코드 발급 (60초 유효)
+  generateOAuthCode(token: string): string {
+    const code = crypto.randomBytes(32).toString('hex');
+    this.oauthCodes.set(code, { token, expiresAt: Date.now() + 60_000 });
+    return code;
+  }
+
+  exchangeOAuthCode(code: string): string {
+    const entry = this.oauthCodes.get(code);
+    if (!entry || Date.now() > entry.expiresAt) {
+      throw new UnauthorizedException('유효하지 않거나 만료된 코드입니다.');
+    }
+    this.oauthCodes.delete(code);
+    return entry.token;
+  }
+
+  // VULN-12: Access Token(1h) + Refresh Token(7d) 발급
+  private signTokens(userId: string, username: string) {
+    const accessToken = this.jwtService.sign(
+      { sub: userId, username, type: 'access' },
+      { expiresIn: '1h' },
+    );
+    const refreshToken = this.jwtService.sign(
+      { sub: userId, username, type: 'refresh' },
+      { expiresIn: '7d' },
+    );
+    return { accessToken, refreshToken };
+  }
+
+  refreshAccessToken(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken) as any;
+      if (payload.type !== 'refresh') throw new Error();
+      const accessToken = this.jwtService.sign(
+        { sub: payload.sub, username: payload.username, type: 'access' },
+        { expiresIn: '1h' },
+      );
+      return { accessToken };
+    } catch {
+      throw new UnauthorizedException('유효하지 않은 리프레시 토큰입니다.');
+    }
+  }
 
   async register(dto: RegisterDto) {
     const exists = await this.prisma.user.findFirst({
@@ -22,7 +103,7 @@ export class AuthService {
       throw new ConflictException('필수 약관에 동의해주세요.');
     }
 
-    const hashed = await bcrypt.hash(dto.password, 10);
+    const hashed = await bcrypt.hash(dto.password, 12); // VULN-14: 비용 계수 12
     const now = new Date();
     const user = await this.prisma.user.create({
       data: {
@@ -41,14 +122,20 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    // VULN-11: 잠금 확인
+    this.checkLock(dto.username);
+
     const user = await this.prisma.user.findUnique({ where: { username: dto.username } });
     if (!user || !user.password || !(await bcrypt.compare(dto.password, user.password))) {
+      this.recordFail(dto.username); // VULN-11: 실패 기록
       throw new UnauthorizedException('아이디 또는 비밀번호가 올바르지 않습니다.');
     }
 
-    const token = this.jwtService.sign({ sub: user.id, username: user.username });
+    this.clearFail(dto.username); // VULN-11: 성공 시 초기화
+    const { accessToken, refreshToken } = this.signTokens(user.id, user.username);
     return {
-      accessToken: token,
+      accessToken,
+      refreshToken,
       user: { id: user.id, email: user.email, username: user.username, name: user.name, role: user.role },
     };
   }
@@ -107,8 +194,8 @@ export class AuthService {
       });
     }
 
-    const token = this.jwtService.sign({ sub: user.id, username: user.username });
-    return { accessToken: token };
+    const { accessToken, refreshToken } = this.signTokens(user.id, user.username);
+    return { accessToken, refreshToken };
   }
 
   async getMe(userId: string) {

@@ -1,6 +1,7 @@
 export const revalidate = 60;
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import sanitizeHtml from 'sanitize-html';
 import { Zap, Star, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -33,7 +34,18 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const mainImage = product.imageUrls?.[0];
   const thumbImages = product.imageUrls?.slice(1, 5) ?? [];
   const detailImages = product.detailImageUrls ?? [];
-  const detailContent = product.detailContent;
+  // VULN-02: XSS 방어 - 허용된 태그/속성만 남기고 이벤트 핸들러 제거
+  const detailContent = product.detailContent
+    ? sanitizeHtml(product.detailContent, {
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h2', 'h3', 'hr']),
+        allowedAttributes: {
+          ...sanitizeHtml.defaults.allowedAttributes,
+          img: ['src', 'alt', 'width', 'height', 'style'],
+          '*': ['class'],
+        },
+        allowedSchemes: ['https', 'http'],
+      })
+    : null;
 
   return (
     <div className="bg-gray-50 min-h-screen">

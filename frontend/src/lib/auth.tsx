@@ -63,8 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    const res = await api.post<{ accessToken: string; user: User }>('/auth/login', { username, password });
+    const res = await api.post<{ accessToken: string; refreshToken: string; user: User }>('/auth/login', { username, password });
     localStorage.setItem('accessToken', res.accessToken);
+    // VULN-12: refresh token 저장
+    if (res.refreshToken) localStorage.setItem('refreshToken', res.refreshToken);
     localStorage.setItem(USER_CACHE_KEY, JSON.stringify(res.user));
     setUser(res.user);
   };
@@ -81,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem(USER_CACHE_KEY);
     setUser(null);
   };

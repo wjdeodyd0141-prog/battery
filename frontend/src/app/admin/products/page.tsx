@@ -29,7 +29,7 @@ export default function AdminProductsPage() {
 
   const load = async () => {
     const [prods, cats] = await Promise.all([
-      api.get<Product[]>('/products?admin=true').catch(() => [] as Product[]),
+      api.get<Product[]>('/products/admin-list').catch(() => [] as Product[]),
       api.get<Category[]>('/categories').catch(() => [] as Category[]),
     ]);
     setProducts(prods);
