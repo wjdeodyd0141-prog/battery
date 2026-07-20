@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { uploadImage } from '@/lib/upload';
-import { Product, Category, ProductOptionGroup } from '@/lib/types';
+import { Product, Category, ProductOptionGroup, ProductSpecs } from '@/lib/types';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 
@@ -287,6 +287,23 @@ function OptionsTab({ productId }: { productId: string }) {
   );
 }
 
+// ── 제품 스펙 필드 정의 ───────────────────────────────────────
+const SPEC_FIELDS: { key: keyof ProductSpecs; label: string; placeholder?: string }[] = [
+  { key: 'manufacturer', label: '제조사', placeholder: '예) 퀀텀캣' },
+  { key: 'brand', label: '브랜드', placeholder: '예) MD홍' },
+  { key: 'modelName', label: '모델명', placeholder: '예) 퀀텀파워 1200Ah' },
+  { key: 'origin', label: '원산지', placeholder: '예) 국산(경기도 안산시)' },
+  { key: 'mfgDate', label: '제조일자', placeholder: '예) 2026.03' },
+  { key: 'batteryType', label: '배터리종류', placeholder: '예) 리튬인산철' },
+  { key: 'capacity', label: '배터리용량', placeholder: '예) 15360Wh' },
+  { key: 'lifespan', label: '평균수명', placeholder: '예) 4000사이클' },
+  { key: 'kcCertNo', label: 'KC인증번호', placeholder: '예) YH12032-24001' },
+  { key: 'voltage', label: '정격전압', placeholder: '예) 12V' },
+  { key: 'current', label: '정격전류', placeholder: '예) 100A' },
+  { key: 'weight', label: '무게', placeholder: '예) 45kg' },
+  { key: 'dimensions', label: '크기', placeholder: '예) 500×300×250mm' },
+];
+
 // ── 메인 모달 ─────────────────────────────────────────────────
 interface Props {
   product: Product | null;
@@ -304,6 +321,7 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [detailImageUrls, setDetailImageUrls] = useState<string[]>([]);
   const [detailContent, setDetailContent] = useState('');
+  const [specs, setSpecs] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -318,6 +336,7 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
       setImageUrls(product.imageUrls);
       setDetailImageUrls(product.detailImageUrls);
       setDetailContent(product.detailContent || '');
+      setSpecs((product.specs as Record<string, string>) || {});
     }
   }, [product]);
 
@@ -333,12 +352,16 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
     if (form.stock === '' || Number(form.stock) < 0) { toast.error('올바른 재고 수량을 입력해주세요.'); return; }
     setSaving(true);
     try {
+      const filteredSpecs = Object.fromEntries(
+        Object.entries(specs).filter(([, v]) => v.trim() !== '')
+      );
       const data = {
         name: form.name, slug: form.slug,
         description: form.description || undefined,
         price: Number(form.price), stock: Number(form.stock),
         imageUrls, detailImageUrls,
         detailContent: detailContent || undefined,
+        specs: Object.keys(filteredSpecs).length > 0 ? filteredSpecs : null,
         categoryId: form.categoryId, isActive: form.isActive,
       };
       if (product) {
@@ -420,6 +443,26 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
                 </button>
                 <span className="text-sm text-gray-700">판매 활성화</span>
               </div>
+              {/* 제품 스펙 */}
+              <div>
+                <Label className="mb-1.5 block">
+                  제품 스펙 <span className="text-xs text-gray-400 font-normal">입력한 항목만 상품 페이지에 표시됩니다</span>
+                </Label>
+                <div className="border border-gray-200 rounded-xl divide-y divide-gray-100">
+                  {SPEC_FIELDS.map(({ key, label, placeholder }) => (
+                    <div key={key} className="flex items-center gap-2 px-3 py-2">
+                      <span className="text-xs text-gray-500 w-20 shrink-0">{label}</span>
+                      <Input
+                        value={specs[key] ?? ''}
+                        onChange={e => setSpecs(prev => ({ ...prev, [key]: e.target.value }))}
+                        placeholder={placeholder}
+                        className="h-7 text-sm flex-1 border-0 shadow-none focus-visible:ring-0 px-0"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <ImageUploadGrid urls={imageUrls} folder="products" onChange={setImageUrls} label="메인 이미지" hint="첫 번째가 대표 이미지" />
               <div>
                 <Label className="mb-1.5 block">상세 내용 <span className="text-xs text-gray-400 font-normal">이미지·텍스트 자유롭게 편집</span></Label>

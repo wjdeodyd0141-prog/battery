@@ -6,7 +6,7 @@ import { Zap, Star, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { api } from '@/lib/api';
-import { Product } from '@/lib/types';
+import { Product, ProductSpecs } from '@/lib/types';
 import AddToCartButton from '@/components/products/add-to-cart-button';
 import ReviewList from '@/components/products/review-list';
 import DetailImagesSection from '@/components/products/detail-images-section';
@@ -30,6 +30,16 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const avgRating = product.reviews?.length
     ? (product.reviews.reduce((s, r) => s + r.rating, 0) / product.reviews.length).toFixed(1)
     : null;
+
+  const SPEC_LABELS: Record<string, string> = {
+    manufacturer: '제조사', brand: '브랜드', modelName: '모델명', origin: '원산지',
+    mfgDate: '제조일자', batteryType: '배터리종류', capacity: '배터리용량',
+    lifespan: '평균수명', kcCertNo: 'KC인증번호', voltage: '정격전압',
+    current: '정격전류', weight: '무게', dimensions: '크기',
+  };
+  const specEntries = product.specs
+    ? Object.entries(product.specs as ProductSpecs).filter(([, v]) => v)
+    : [];
 
   const mainImage = product.imageUrls?.[0];
   const thumbImages = product.imageUrls?.slice(1, 5) ?? [];
@@ -151,14 +161,33 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
           {/* 상세 내용 */}
           <div className="p-6 sm:p-10">
+            {/* 제품 스펙 테이블 */}
+            {specEntries.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">제품 사양</h3>
+                <table className="w-full text-sm border-collapse">
+                  <tbody>
+                    {specEntries.map(([key, value]) => (
+                      <tr key={key} className="border-b border-gray-100 last:border-0">
+                        <td className="py-2.5 pr-4 text-gray-500 font-medium whitespace-nowrap w-32">
+                          {SPEC_LABELS[key] ?? key}
+                        </td>
+                        <td className="py-2.5 text-gray-800">{value as string}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
             {detailContent ? (
               <div
                 className="prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: detailContent }}
               />
-            ) : (
+            ) : specEntries.length === 0 ? (
               <DetailImagesSection detailImageUrls={detailImages} productName={product.name} />
-            )}
+            ) : null}
           </div>
         </div>
 

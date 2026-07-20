@@ -43,6 +43,23 @@ export interface SelectedOption {
   price: number;
 }
 
+export interface ProductSpecs {
+  manufacturer?: string;
+  brand?: string;
+  modelName?: string;
+  origin?: string;
+  mfgDate?: string;
+  batteryType?: string;
+  capacity?: string;
+  lifespan?: string;
+  kcCertNo?: string;
+  voltage?: string;
+  current?: string;
+  weight?: string;
+  dimensions?: string;
+  [key: string]: string | undefined;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -53,6 +70,7 @@ export interface Product {
   imageUrls: string[];
   detailImageUrls: string[];
   detailContent: string | null;
+  specs: ProductSpecs | null;
   isActive: boolean;
   categoryId: string;
   category: Category;

@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsOptional, IsArray, IsBoolean, Min } from 'class-validator';
+import { IsString, IsInt, IsOptional, IsArray, IsBoolean, IsObject, Min } from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
@@ -31,6 +31,10 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   detailContent?: string;
+
+  @IsObject()
+  @IsOptional()
+  specs?: Record<string, string>;
 
   @IsString()
   categoryId: string;
