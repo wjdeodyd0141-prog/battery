@@ -10,6 +10,9 @@ import { api } from '@/lib/api';
 import { uploadImage } from '@/lib/upload';
 import { Product, Category, ProductOptionGroup } from '@/lib/types';
 import { toast } from 'sonner';
+import dynamic from 'next/dynamic';
+
+const RichTextEditor = dynamic(() => import('./rich-text-editor'), { ssr: false });
 
 const MAX_IMAGES = 8;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -300,6 +303,7 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
   });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [detailImageUrls, setDetailImageUrls] = useState<string[]>([]);
+  const [detailContent, setDetailContent] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -313,6 +317,7 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
       });
       setImageUrls(product.imageUrls);
       setDetailImageUrls(product.detailImageUrls);
+      setDetailContent(product.detailContent || '');
     }
   }, [product]);
 
@@ -333,6 +338,7 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
         description: form.description || undefined,
         price: Number(form.price), stock: Number(form.stock),
         imageUrls, detailImageUrls,
+        detailContent: detailContent || undefined,
         categoryId: form.categoryId, isActive: form.isActive,
       };
       if (product) {
@@ -415,7 +421,10 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
                 <span className="text-sm text-gray-700">판매 활성화</span>
               </div>
               <ImageUploadGrid urls={imageUrls} folder="products" onChange={setImageUrls} label="메인 이미지" hint="첫 번째가 대표 이미지" />
-              <ImageUploadGrid urls={detailImageUrls} folder="products/detail" onChange={setDetailImageUrls} label="상세 이미지" hint="상품 상세 페이지에 표시" />
+              <div>
+                <Label className="mb-1.5 block">상세 내용 <span className="text-xs text-gray-400 font-normal">이미지·텍스트 자유롭게 편집</span></Label>
+                <RichTextEditor value={detailContent} onChange={setDetailContent} />
+              </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="outline" onClick={onClose}>취소</Button>
                 <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={saving}>

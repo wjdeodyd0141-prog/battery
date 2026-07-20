@@ -70,6 +70,7 @@ model Product {
   stock       Int      @default(0)
   imageUrls       String[]
   detailImageUrls String[]
+  detailContent   String?
   isActive        Boolean  @default(true)
   categoryId  String
   createdAt   DateTime @default(now())

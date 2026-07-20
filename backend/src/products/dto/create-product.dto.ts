@@ -29,6 +29,10 @@ export class CreateProductDto {
   detailImageUrls?: string[];
 
   @IsString()
+  @IsOptional()
+  detailContent?: string;
+
+  @IsString()
   categoryId: string;
 
   @IsBoolean()

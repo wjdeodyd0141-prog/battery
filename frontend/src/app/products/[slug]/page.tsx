@@ -33,6 +33,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const mainImage = product.imageUrls?.[0];
   const thumbImages = product.imageUrls?.slice(1, 5) ?? [];
   const detailImages = product.detailImageUrls ?? [];
+  const detailContent = product.detailContent;
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -136,9 +137,16 @@ export default async function ProductDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* 상세 이미지 */}
+          {/* 상세 내용 */}
           <div className="p-6 sm:p-10">
-            <DetailImagesSection detailImageUrls={detailImages} productName={product.name} />
+            {detailContent ? (
+              <div
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: detailContent }}
+              />
+            ) : (
+              <DetailImagesSection detailImageUrls={detailImages} productName={product.name} />
+            )}
           </div>
         </div>
 

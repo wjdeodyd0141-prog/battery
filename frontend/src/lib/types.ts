@@ -52,6 +52,7 @@ export interface Product {
   stock: number;
   imageUrls: string[];
   detailImageUrls: string[];
+  detailContent: string | null;
   isActive: boolean;
   categoryId: string;
   category: Category;
