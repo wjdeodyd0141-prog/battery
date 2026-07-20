@@ -3,8 +3,10 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
-import { useRef } from 'react';
-import { Bold, Italic, List, ListOrdered, ImageIcon, Heading2, Heading3, Minus } from 'lucide-react';
+import TextStyle from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
+import { useRef, useState } from 'react';
+import { Bold, Italic, List, ListOrdered, ImageIcon, Heading2, Heading3, Minus, Palette } from 'lucide-react';
 import { uploadImage } from '@/lib/upload';
 import { toast } from 'sonner';
 
@@ -15,11 +17,16 @@ interface Props {
 
 export default function RichTextEditor({ value, onChange }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const colorInputRef = useRef<HTMLInputElement>(null);
+
+  const PRESET_COLORS = ['#000000', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'];
 
   const editor = useEditor({
     extensions: [
       StarterKit,
       Image.configure({ inline: false, allowBase64: false }),
+      TextStyle,
+      Color,
     ],
     content: value,
     onUpdate({ editor }) {
@@ -91,6 +98,28 @@ export default function RichTextEditor({ value, onChange }: Props) {
         </button>
         <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
           multiple className="hidden" onChange={e => handleImageUpload(e.target.files)} />
+        <div className="w-px h-5 bg-gray-200 mx-1" />
+        {/* 색상 프리셋 */}
+        {PRESET_COLORS.map(color => (
+          <button key={color} type="button"
+            onClick={() => editor.chain().focus().setColor(color).run()}
+            title={color}
+            className="w-5 h-5 rounded-full border border-gray-300 hover:scale-110 transition-transform shrink-0"
+            style={{ backgroundColor: color }}
+          />
+        ))}
+        {/* 커스텀 색상 피커 */}
+        <button type="button" onClick={() => colorInputRef.current?.click()}
+          className={btn(false)} title="직접 색상 선택">
+          <Palette className="w-4 h-4" />
+        </button>
+        <input ref={colorInputRef} type="color" className="hidden"
+          onChange={e => editor.chain().focus().setColor(e.target.value).run()} />
+        <button type="button"
+          onClick={() => editor.chain().focus().unsetColor().run()}
+          className="text-xs px-1.5 py-0.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-100 ml-0.5">
+          초기화
+        </button>
       </div>
 
       {/* 에디터 본문 */}
