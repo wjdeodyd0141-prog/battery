@@ -184,6 +184,7 @@ export default function AdminProductsPage() {
                   <th className="text-left px-4 py-3 font-medium text-gray-600">상품명</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">카테고리</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-600">가격</th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">적립률</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-600">재고</th>
                   <th className="text-center px-4 py-3 font-medium text-gray-600">상태</th>
                   <th className="text-center px-4 py-3 font-medium text-gray-600">관리</th>
@@ -195,6 +196,11 @@ export default function AdminProductsPage() {
                     <td className="px-4 py-3 font-medium line-clamp-1">{p.name}</td>
                     <td className="px-4 py-3 text-gray-500">{p.category?.name}</td>
                     <td className="px-4 py-3 text-right">{p.price.toLocaleString()}원</td>
+                    <td className="px-4 py-3 text-right">
+                      {p.mileageRate != null
+                        ? <span className="text-emerald-600 font-medium">{p.mileageRate}%</span>
+                        : <span className="text-gray-300 text-xs">기본</span>}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <span className={p.stock === 0 ? 'text-red-500' : 'text-gray-700'}>{p.stock}</span>
                     </td>
