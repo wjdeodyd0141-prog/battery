@@ -150,6 +150,7 @@ export class AuthService {
         client_id: process.env.KAKAO_CLIENT_ID!,
         redirect_uri: process.env.KAKAO_REDIRECT_URI!,
         code,
+        ...(process.env.KAKAO_CLIENT_SECRET ? { client_secret: process.env.KAKAO_CLIENT_SECRET } : {}),
       }).toString(),
     });
 
