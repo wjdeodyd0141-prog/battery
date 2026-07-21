@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, User, Menu, X, Zap, LogOut, Package, Settings, MessageSquare, LayoutDashboard } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, Zap, LogOut, Package, Settings, MessageSquare, LayoutDashboard, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -15,6 +15,8 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useCart } from '@/lib/cart-context';
 import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 
 const NAV_LINKS: { href: string; label: string }[] = [];
 
@@ -23,6 +25,25 @@ export default function Header() {
   const { itemCount } = useCart();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadCoupons, setUnreadCoupons] = useState(0);
+  const toastShownRef = useRef(false);
+
+  useEffect(() => {
+    if (!user) { setUnreadCoupons(0); toastShownRef.current = false; return; }
+    api.get<{ count: number }>('/coupons/unread-count')
+      .then(r => {
+        setUnreadCoupons(r.count);
+        if (r.count > 0 && !toastShownRef.current) {
+          toastShownRef.current = true;
+          toast('🎫 새 쿠폰이 도착했습니다!', {
+            description: `미사용 쿠폰 ${r.count}장`,
+            action: { label: '확인하기', onClick: () => router.push('/my/coupons') },
+            duration: 6000,
+          });
+        }
+      })
+      .catch(() => {});
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -67,6 +88,22 @@ export default function Header() {
                 관리자
               </Link>
             )}
+            {/* 쿠폰 알림 */}
+            {user && (
+              <Link
+                href="/my/coupons"
+                className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                title="쿠폰함"
+              >
+                <Ticket className="w-5 h-5 text-gray-600" />
+                {unreadCoupons > 0 && (
+                  <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center p-0 text-[10px] bg-red-500 rounded-full">
+                    {unreadCoupons > 9 ? '9+' : unreadCoupons}
+                  </Badge>
+                )}
+              </Link>
+            )}
+
             {/* 장바구니 */}
             <Link href="/cart" className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
               <ShoppingCart className="w-5 h-5 text-gray-600" />

@@ -190,6 +190,32 @@ export interface Popup {
   updatedAt: string;
 }
 
+export type DiscountType = 'PERCENT' | 'AMOUNT';
+
+export interface Coupon {
+  id: string;
+  name: string;
+  discountType: DiscountType;
+  discountValue: number;
+  minOrderAmount: number;
+  maxDiscountAmount: number | null;
+  expiresAt: string | null;
+  isActive: boolean;
+  createdAt: string;
+  _count?: { userCoupons: number };
+}
+
+export interface UserCoupon {
+  id: string;
+  userId: string;
+  couponId: string;
+  isUsed: boolean;
+  isRead: boolean;
+  usedAt: string | null;
+  createdAt: string;
+  coupon: Coupon;
+}
+
 export interface Review {
   id: string;
   userId: string;

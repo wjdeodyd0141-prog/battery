@@ -17,6 +17,11 @@ enum MileageType {
   ADMIN
 }
 
+enum DiscountType {
+  PERCENT
+  AMOUNT
+}
+
 enum InquiryStatus {
   PENDING
   ANSWERED
@@ -55,6 +60,7 @@ model User {
   inquiries       Inquiry[]
   inquiryReplies  InquiryReply[]
   mileageHistory  MileageHistory[]
+  userCoupons     UserCoupon[]
 }
 
 model Category {
@@ -216,6 +222,32 @@ model SiteSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model Coupon {
+  id                String       @id @default(cuid())
+  name              String
+  discountType      DiscountType
+  discountValue     Float
+  minOrderAmount    Int          @default(0)
+  maxDiscountAmount Int?
+  expiresAt         DateTime?
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  userCoupons       UserCoupon[]
+}
+
+model UserCoupon {
+  id        String    @id @default(cuid())
+  userId    String
+  couponId  String
+  isUsed    Boolean   @default(false)
+  isRead    Boolean   @default(false)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  coupon Coupon @relation(fields: [couponId], references: [id])
 }
 
 model Popup {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, Package, Star, MapPin, Phone, Mail, ChevronRight, Edit3, Check, Coins } from 'lucide-react';
+import { User, Package, Star, MapPin, Phone, Mail, ChevronRight, Edit3, Check, Coins, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,9 +12,10 @@ import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
 const QUICK_MENU = [
-  { href: '/my/orders',  icon: Package, label: '주문내역',  desc: '주문 현황 확인',    color: 'text-blue-600',   bg: 'bg-blue-50' },
-  { href: '/my/reviews', icon: Star,    label: '내 리뷰',   desc: '작성한 리뷰 관리', color: 'text-amber-600',  bg: 'bg-amber-50' },
-  { href: '/my/mileage', icon: Coins,   label: '마일리지',  desc: '적립금 내역 확인', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  { href: '/my/orders',  icon: Package, label: '주문내역',  desc: '주문 현황 확인',    color: 'text-blue-600',    bg: 'bg-blue-50' },
+  { href: '/my/reviews', icon: Star,    label: '내 리뷰',   desc: '작성한 리뷰 관리',  color: 'text-amber-600',   bg: 'bg-amber-50' },
+  { href: '/my/mileage', icon: Coins,   label: '마일리지',  desc: '적립금 내역 확인',  color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  { href: '/my/coupons', icon: Ticket,  label: '쿠폰함',    desc: '보유 쿠폰 확인',    color: 'text-purple-600',  bg: 'bg-purple-50' },
 ];
 
 export default function MyPage() {
@@ -80,7 +81,7 @@ export default function MyPage() {
 
       <div className="max-w-2xl mx-auto px-4 -mt-12 pb-16 space-y-4">
         {/* 퀵 메뉴 */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {QUICK_MENU.map((item) => (
             <Link
               key={item.href}
