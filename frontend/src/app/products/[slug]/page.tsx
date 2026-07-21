@@ -2,7 +2,7 @@ export const revalidate = 60;
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import sanitizeHtml from 'sanitize-html';
-import { Zap, Star, Package } from 'lucide-react';
+import { Zap, Star, Package, Coins } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { api } from '@/lib/api';
@@ -119,6 +119,13 @@ export default async function ProductDetailPage({ params }: PageProps) {
               <span className="text-3xl font-bold text-gray-900">{product.price.toLocaleString()}</span>
               <span className="text-lg text-gray-500 ml-1">원</span>
             </div>
+
+            {product.mileageRate != null && (
+              <div className="flex items-center gap-1.5 text-sm text-emerald-600 font-medium">
+                <Coins className="w-4 h-4 text-emerald-500" />
+                구매 시 <strong>{product.mileageRate}%</strong> 마일리지 적립
+              </div>
+            )}
 
             <div className="flex items-center gap-2 text-sm bg-gray-50 rounded-xl px-4 py-2.5">
               <Package className="w-4 h-4 text-gray-400" />
