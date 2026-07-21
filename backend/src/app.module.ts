@@ -17,6 +17,7 @@ import { BannersModule } from './banners/banners.module';
 import { ProductOptionsModule } from './product-options/product-options.module';
 import { PopupsModule } from './popups/popups.module';
 import { FaqsModule } from './faqs/faqs.module';
+import { MileageModule } from './mileage/mileage.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { FaqsModule } from './faqs/faqs.module';
     ProductOptionsModule,
     PopupsModule,
     FaqsModule,
+    MileageModule,
   ],
   providers: [
     // 모든 라우트에 Rate Limit 적용

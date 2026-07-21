@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsOptional, IsArray, IsBoolean, IsObject, Min } from 'class-validator';
+import { IsString, IsInt, IsOptional, IsArray, IsBoolean, IsObject, IsNumber, Min, Max } from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
@@ -35,6 +35,12 @@ export class CreateProductDto {
   @IsObject()
   @IsOptional()
   specs?: Record<string, string>;
+
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  mileageRate?: number;
 
   @IsString()
   categoryId: string;

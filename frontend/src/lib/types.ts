@@ -71,6 +71,7 @@ export interface Product {
   detailImageUrls: string[];
   detailContent: string | null;
   specs: ProductSpecs | null;
+  mileageRate: number | null;
   isActive: boolean;
   categoryId: string;
   category: Category;
@@ -162,6 +163,18 @@ export interface Inquiry {
   updatedAt: string;
   user: { id: string; username: string; name: string | null };
   reply: InquiryReply | null;
+}
+
+export type MileageType = 'EARN' | 'USE' | 'ADMIN';
+
+export interface MileageHistory {
+  id: string;
+  userId: string;
+  amount: number;
+  type: MileageType;
+  reason: string;
+  orderId: string | null;
+  createdAt: string;
 }
 
 export interface Popup {

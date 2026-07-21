@@ -322,6 +322,7 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
   const [detailImageUrls, setDetailImageUrls] = useState<string[]>([]);
   const [detailContent, setDetailContent] = useState('');
   const [specs, setSpecs] = useState<Record<string, string>>({});
+  const [mileageRate, setMileageRate] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -337,6 +338,7 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
       setDetailImageUrls(product.detailImageUrls);
       setDetailContent(product.detailContent || '');
       setSpecs((product.specs as Record<string, string>) || {});
+      setMileageRate(product.mileageRate != null ? String(product.mileageRate) : '');
     }
   }, [product]);
 
@@ -362,6 +364,7 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
         imageUrls, detailImageUrls,
         detailContent: detailContent || undefined,
         specs: Object.keys(filteredSpecs).length > 0 ? filteredSpecs : null,
+        mileageRate: mileageRate !== '' ? Number(mileageRate) : null,
         categoryId: form.categoryId, isActive: form.isActive,
       };
       if (product) {
@@ -434,6 +437,22 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
                 <div>
                   <Label>재고 *</Label>
                   <Input type="number" value={form.stock} onChange={update('stock')} min={0} className="mt-1" />
+                </div>
+              </div>
+              <div>
+                <Label>
+                  적립률 (%) <span className="text-xs text-gray-400 font-normal">비워두면 사이트 기본 적립률 적용</span>
+                </Label>
+                <div className="relative mt-1">
+                  <Input
+                    type="number"
+                    value={mileageRate}
+                    onChange={e => setMileageRate(e.target.value)}
+                    min={0} max={100} step={0.1}
+                    placeholder="예) 2 (2%)"
+                    className="pr-8"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">%</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, Package, Star, MapPin, Phone, Mail, ChevronRight, Edit3, Check } from 'lucide-react';
+import { User, Package, Star, MapPin, Phone, Mail, ChevronRight, Edit3, Check, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,8 +12,9 @@ import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
 const QUICK_MENU = [
-  { href: '/my/orders', icon: Package, label: '주문내역', desc: '주문 현황 확인', color: 'text-blue-600', bg: 'bg-blue-50' },
-  { href: '/my/reviews', icon: Star,   label: '내 리뷰',  desc: '작성한 리뷰 관리', color: 'text-amber-600', bg: 'bg-amber-50' },
+  { href: '/my/orders',  icon: Package, label: '주문내역',  desc: '주문 현황 확인',    color: 'text-blue-600',   bg: 'bg-blue-50' },
+  { href: '/my/reviews', icon: Star,    label: '내 리뷰',   desc: '작성한 리뷰 관리', color: 'text-amber-600',  bg: 'bg-amber-50' },
+  { href: '/my/mileage', icon: Coins,   label: '마일리지',  desc: '적립금 내역 확인', color: 'text-emerald-600', bg: 'bg-emerald-50' },
 ];
 
 export default function MyPage() {
@@ -22,10 +23,14 @@ export default function MyPage() {
   const [form, setForm] = useState({ name: '', phone: '', address: '' });
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [mileage, setMileage] = useState<number | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
-    if (user) setForm({ name: user.name || '', phone: user.phone || '', address: user.address || '' });
+    if (user) {
+      setForm({ name: user.name || '', phone: user.phone || '', address: user.address || '' });
+      api.get<{ balance: number }>('/mileage/balance').then(r => setMileage(r.balance)).catch(() => {});
+    }
   }, [user, loading]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -59,17 +64,23 @@ export default function MyPage() {
           <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-white text-2xl sm:text-3xl font-bold shrink-0">
             {initials}
           </div>
-          <div className="text-white">
+          <div className="text-white flex-1">
             <p className="text-xs text-blue-200 mb-1">{user.role === 'ADMIN' ? '👑 관리자' : '일반 회원'}</p>
             <h1 className="text-xl sm:text-2xl font-bold">{user.name || user.username}</h1>
             <p className="text-blue-200 text-sm mt-0.5">{user.email}</p>
+            {mileage !== null && (
+              <div className="mt-2 inline-flex items-center gap-1.5 bg-white/20 rounded-xl px-3 py-1.5">
+                <Coins className="w-3.5 h-3.5 text-yellow-300" />
+                <span className="text-sm font-semibold">{mileage.toLocaleString()}원 적립</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 -mt-12 pb-16 space-y-4">
         {/* 퀵 메뉴 */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {QUICK_MENU.map((item) => (
             <Link
               key={item.href}

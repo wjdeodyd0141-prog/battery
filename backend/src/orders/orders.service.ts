@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { MileageService } from '../mileage/mileage.service';
 import { OrderStatus } from '@prisma/client';
 
 export interface SelectedOption {
@@ -31,6 +32,7 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    private mileageService: MileageService,
   ) {}
 
   async createOrder(userId: string, dto: CreateOrderDto) {
@@ -158,7 +160,7 @@ export class OrdersService {
   async updateStatus(orderId: string, status: string) {
     const validStatuses: string[] = ['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
     if (!validStatuses.includes(status)) throw new BadRequestException('유효하지 않은 주문 상태입니다.');
-    return this.prisma.order.update({
+    const updated = await this.prisma.order.update({
       where: { id: orderId },
       data: { status: status as OrderStatus },
       include: {
@@ -166,6 +168,11 @@ export class OrdersService {
         user: { select: { id: true, username: true, name: true, email: true, phone: true } },
       },
     });
+    // DELIVERED 처리 시 마일리지 자동 적립
+    if (status === 'DELIVERED') {
+      this.mileageService.earnFromOrder(orderId).catch(() => {});
+    }
+    return updated;
   }
 
   async updateTracking(orderId: string, trackingNumber: string, carrier: string) {
