@@ -121,9 +121,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
             </div>
 
             {product.mileageRate != null && (
-              <div className="flex items-center gap-1.5 text-sm text-emerald-600 font-medium">
-                <Coins className="w-4 h-4 text-emerald-500" />
-                구매 시 <strong>{product.mileageRate}%</strong> 마일리지 적립
+              <div className="flex items-center gap-2 bg-emerald-50 rounded-xl px-4 py-2.5">
+                <Coins className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span className="text-sm text-emerald-700">
+                  구매 시 <strong className="text-emerald-600">{Math.floor(product.price * product.mileageRate / 100).toLocaleString()}원</strong> 마일리지 적립
+                  <span className="text-emerald-400 ml-1">({product.mileageRate}%)</span>
+                </span>
               </div>
             )}
 
