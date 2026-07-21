@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, Package, Star, MapPin, Phone, Mail, ChevronRight, Edit3, Check, Coins, Ticket } from 'lucide-react';
+import { User, Package, Star, MapPin, Phone, Mail, Edit3, Check, Coins, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -81,21 +81,17 @@ export default function MyPage() {
 
       <div className="max-w-2xl mx-auto px-4 -mt-12 pb-16 space-y-4">
         {/* 퀵 메뉴 */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           {QUICK_MENU.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 flex items-center gap-3 hover:border-blue-300 hover:shadow-md transition-all group"
+              className="bg-white rounded-2xl border border-gray-100 py-5 px-2 flex flex-col items-center gap-2 hover:border-blue-300 hover:shadow-md transition-all group text-center"
             >
-              <div className={`w-11 h-11 ${item.bg} rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
-                <item.icon className={`w-5 h-5 ${item.color}`} />
+              <div className={`w-12 h-12 ${item.bg} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                <item.icon className={`w-6 h-6 ${item.color}`} />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-gray-900">{item.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-400 transition-colors shrink-0" />
+              <p className="font-semibold text-sm text-gray-900 leading-tight">{item.label}</p>
             </Link>
           ))}
         </div>
