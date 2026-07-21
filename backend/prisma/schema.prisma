@@ -22,6 +22,12 @@ enum DiscountType {
   AMOUNT
 }
 
+enum CouponTrigger {
+  NONE
+  SIGNUP
+  FIRST_PURCHASE
+}
+
 enum InquiryStatus {
   PENDING
   ANSWERED
@@ -225,15 +231,16 @@ model SiteSetting {
 }
 
 model Coupon {
-  id                String       @id @default(cuid())
+  id                String        @id @default(cuid())
   name              String
   discountType      DiscountType
   discountValue     Float
-  minOrderAmount    Int          @default(0)
+  minOrderAmount    Int           @default(0)
   maxDiscountAmount Int?
   expiresAt         DateTime?
-  isActive          Boolean      @default(true)
-  createdAt         DateTime     @default(now())
+  triggerType       CouponTrigger @default(NONE)
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
   userCoupons       UserCoupon[]
 }
 

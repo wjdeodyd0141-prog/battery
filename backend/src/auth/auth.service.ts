@@ -5,6 +5,7 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { CouponService } from '../coupon/coupon.service';
 
 // VULN-11: 로그인 실패 추적 (계정 잠금)
 interface LoginAttempt { count: number; lockedUntil: number; }
@@ -25,6 +26,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private couponService: CouponService,
   ) {}
 
   // VULN-11: 잠금 여부 확인
@@ -118,6 +120,7 @@ export class AuthService {
       },
       select: { id: true, email: true, username: true, name: true, role: true },
     });
+    this.couponService.issueByTrigger(user.id, 'SIGNUP').catch(() => {});
     return user;
   }
 
@@ -181,6 +184,7 @@ export class AuthService {
     }
 
     // 5. 신규 회원 생성
+    let isNewUser = false;
     if (!user) {
       user = await this.prisma.user.create({
         data: {
@@ -193,6 +197,10 @@ export class AuthService {
           privacyAgreedAt: new Date(),
         },
       });
+      isNewUser = true;
+    }
+    if (isNewUser) {
+      this.couponService.issueByTrigger(user.id, 'SIGNUP').catch(() => {});
     }
 
     const { accessToken, refreshToken } = this.signTokens(user.id, user.username);

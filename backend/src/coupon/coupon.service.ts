@@ -12,6 +12,7 @@ export class CouponService {
     minOrderAmount?: number;
     maxDiscountAmount?: number;
     expiresAt?: string;
+    triggerType?: 'NONE' | 'SIGNUP' | 'FIRST_PURCHASE';
   }) {
     return this.prisma.coupon.create({
       data: {
@@ -21,8 +22,23 @@ export class CouponService {
         minOrderAmount: data.minOrderAmount ?? 0,
         maxDiscountAmount: data.maxDiscountAmount ?? null,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+        triggerType: data.triggerType ?? 'NONE',
       },
     });
+  }
+
+  async issueByTrigger(userId: string, trigger: 'SIGNUP' | 'FIRST_PURCHASE') {
+    const coupons = await this.prisma.coupon.findMany({
+      where: { triggerType: trigger, isActive: true },
+    });
+    for (const coupon of coupons) {
+      const exists = await this.prisma.userCoupon.findFirst({
+        where: { couponId: coupon.id, userId },
+      });
+      if (!exists) {
+        await this.prisma.userCoupon.create({ data: { couponId: coupon.id, userId } });
+      }
+    }
   }
 
   async listCoupons() {

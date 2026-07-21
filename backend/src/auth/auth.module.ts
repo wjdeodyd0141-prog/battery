@@ -5,9 +5,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { CouponModule } from '../coupon/coupon.module';
 
 @Module({
   imports: [
+    CouponModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

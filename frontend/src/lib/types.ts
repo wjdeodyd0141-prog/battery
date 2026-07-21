@@ -191,6 +191,7 @@ export interface Popup {
 }
 
 export type DiscountType = 'PERCENT' | 'AMOUNT';
+export type CouponTrigger = 'NONE' | 'SIGNUP' | 'FIRST_PURCHASE';
 
 export interface Coupon {
   id: string;
@@ -200,6 +201,7 @@ export interface Coupon {
   minOrderAmount: number;
   maxDiscountAmount: number | null;
   expiresAt: string | null;
+  triggerType: CouponTrigger;
   isActive: boolean;
   createdAt: string;
   _count?: { userCoupons: number };

@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, ForbiddenException, NotFoundException 
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrdersService } from '../orders/orders.service';
+import { CouponService } from '../coupon/coupon.service';
 
 @Injectable()
 export class PaymentsService {
@@ -11,6 +12,7 @@ export class PaymentsService {
     private configService: ConfigService,
     private prisma: PrismaService,
     private ordersService: OrdersService,
+    private couponService: CouponService,
   ) {
     this.tossSecretKey = this.configService.get<string>('TOSS_SECRET_KEY') as string;
   }
@@ -46,6 +48,12 @@ export class PaymentsService {
 
     const tossData = await response.json();
     const order = await this.ordersService.confirmPayment(orderId, paymentKey, amount);
+
+    // 첫 구매 쿠폰 트리거
+    const paidCount = await this.prisma.order.count({ where: { userId, status: 'PAID' } });
+    if (paidCount === 1) {
+      this.couponService.issueByTrigger(userId, 'FIRST_PURCHASE').catch(() => {});
+    }
 
     return { order, tossData };
   }

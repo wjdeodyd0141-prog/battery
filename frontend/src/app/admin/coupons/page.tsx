@@ -15,13 +15,14 @@ import { toast } from 'sonner';
 interface CouponUser { id: string; username: string; name: string | null; email: string | null; }
 
 const DISCOUNT_LABEL = { PERCENT: '%', AMOUNT: '원' };
+const TRIGGER_LABEL: Record<string, string> = { NONE: '', SIGNUP: '🎁 가입', FIRST_PURCHASE: '🛍 첫구매' };
 
 export default function AdminCouponsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   // 쿠폰 생성 폼
-  const [form, setForm] = useState({ name: '', discountType: 'PERCENT', discountValue: '', minOrderAmount: '', maxDiscountAmount: '', expiresAt: '' });
+  const [form, setForm] = useState({ name: '', discountType: 'PERCENT', discountValue: '', minOrderAmount: '', maxDiscountAmount: '', expiresAt: '', triggerType: 'NONE' });
   const [creating, setCreating] = useState(false);
 
   // 쿠폰 목록
@@ -56,9 +57,10 @@ export default function AdminCouponsPage() {
         minOrderAmount: form.minOrderAmount ? parseInt(form.minOrderAmount) : 0,
         maxDiscountAmount: form.maxDiscountAmount ? parseInt(form.maxDiscountAmount) : undefined,
         expiresAt: form.expiresAt || undefined,
+        triggerType: form.triggerType,
       });
       toast.success('쿠폰이 생성됐습니다.');
-      setForm({ name: '', discountType: 'PERCENT', discountValue: '', minOrderAmount: '', maxDiscountAmount: '', expiresAt: '' });
+      setForm({ name: '', discountType: 'PERCENT', discountValue: '', minOrderAmount: '', maxDiscountAmount: '', expiresAt: '', triggerType: 'NONE' });
       loadCoupons();
     } catch (err: any) {
       toast.error(err.message);
@@ -137,6 +139,26 @@ export default function AdminCouponsPage() {
               <Label className="text-xs text-gray-600">만료일 (선택)</Label>
               <Input type="date" value={form.expiresAt} onChange={e => setForm({ ...form, expiresAt: e.target.value })} className="mt-1" />
             </div>
+            <div className="sm:col-span-2">
+              <Label className="text-xs text-gray-600">자동 발급 트리거</Label>
+              <div className="mt-1 grid grid-cols-3 gap-2">
+                {[
+                  { value: 'NONE', label: '직접 발급', desc: '어드민이 수동으로 발급' },
+                  { value: 'SIGNUP', label: '회원가입', desc: '신규 가입 시 자동 발급' },
+                  { value: 'FIRST_PURCHASE', label: '첫 구매', desc: '첫 결제 완료 시 자동 발급' },
+                ].map(t => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, triggerType: t.value })}
+                    className={`p-3 rounded-xl border text-left transition-all ${form.triggerType === t.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-200'}`}
+                  >
+                    <p className={`text-xs font-semibold ${form.triggerType === t.value ? 'text-blue-700' : 'text-gray-700'}`}>{t.label}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">{t.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           <Button type="submit" disabled={creating} className="bg-blue-600 hover:bg-blue-700">
             {creating ? '생성 중...' : '쿠폰 생성'}
@@ -164,6 +186,11 @@ export default function AdminCouponsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-semibold text-gray-900 text-sm">{c.name}</p>
+                        {(c as any).triggerType && (c as any).triggerType !== 'NONE' && (
+                          <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">
+                            {TRIGGER_LABEL[(c as any).triggerType]}
+                          </span>
+                        )}
                         {expired && <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">만료됨</span>}
                       </div>
                       <p className="text-xs text-gray-500 mt-0.5">
