@@ -5,6 +5,8 @@ import { Category } from '@/lib/types';
 const SUPPORT_LINKS = [
   { href: '/my/orders', label: '주문/배송 조회' },
   { href: '/my', label: '마이페이지' },
+  { href: '/inquiry', label: '1:1 문의' },
+  { href: '/faq', label: '자주 묻는 질문' },
 ];
 
 async function getCategories(): Promise<Category[]> {
@@ -39,11 +41,11 @@ export default async function Footer() {
             <div className="mt-6 space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-gray-500 shrink-0" />
-                <span>1588-0000 (평일 09:00~18:00)</span>
+                <span>010-3532-3799 (평일 09:00~18:00)</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-gray-500 shrink-0" />
-                <span>support@powerbankshow.kr</span>
+                <span>symict1@naver.com</span>
               </div>
             </div>
           </div>
@@ -89,11 +91,32 @@ export default async function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
-          <span>© 2026 파워뱅크 전시장. All rights reserved.</span>
-          <div className="flex gap-4">
-            <Link href="/privacy" className="hover:text-gray-400 transition-colors">개인정보처리방침</Link>
-            <Link href="/terms" className="hover:text-gray-400 transition-colors">이용약관</Link>
+        {/* 사업자 정보 */}
+        <div className="border-t border-gray-800 mt-12 pt-8">
+          <div className="text-xs text-gray-600 leading-6 space-y-1">
+            <p>
+              <span className="text-gray-500 font-medium">상호명</span> 파워뱅크전시장&nbsp;&nbsp;
+              <span className="text-gray-500 font-medium">대표자</span> 정태산&nbsp;&nbsp;
+              <span className="text-gray-500 font-medium">사업자등록번호</span> 641-13-02245
+            </p>
+            <p>
+              <span className="text-gray-500 font-medium">통신판매업 신고번호</span> 제2023-서울강서-3133호&nbsp;&nbsp;
+              <span className="text-gray-500 font-medium">호스팅 제공자</span> Vercel Inc.
+            </p>
+            <p>
+              <span className="text-gray-500 font-medium">주소</span> 서울특별시 강서구 공항대로 195 힐스테이트에코동익 109호 (우: 07801)
+            </p>
+            <p>
+              <span className="text-gray-500 font-medium">전화</span> 010-3532-3799&nbsp;&nbsp;
+              <span className="text-gray-500 font-medium">이메일</span> symict1@naver.com
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-4 text-xs text-gray-600">
+            <span>© 2026 파워뱅크전시장. All rights reserved.</span>
+            <div className="flex gap-4">
+              <Link href="/privacy" className="hover:text-gray-400 transition-colors">개인정보처리방침</Link>
+              <Link href="/terms" className="hover:text-gray-400 transition-colors">이용약관</Link>
+            </div>
           </div>
         </div>
       </div>

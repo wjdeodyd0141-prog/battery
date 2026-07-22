@@ -4,7 +4,7 @@ export default function PrivacyPage() {
       <div className="max-w-3xl mx-auto px-4">
         <div className="bg-white rounded-2xl border border-gray-100 p-8 sm:p-12">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">개인정보처리방침</h1>
-          <p className="text-sm text-gray-400 mb-8">시행일: 2024년 1월 1일 | 최종 수정일: 2024년 1월 1일</p>
+          <p className="text-sm text-gray-400 mb-8">시행일: 2026년 7월 23일</p>
 
           <div className="prose prose-sm max-w-none text-gray-700 space-y-6">
 
@@ -164,8 +164,9 @@ export default function PrivacyPage() {
                 <li>회사는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 정보주체의 개인정보 관련 불만처리 및 피해구제 등을 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.
                   <div className="mt-2 bg-gray-50 rounded-lg p-4 text-sm">
                     <p><strong>개인정보 보호책임자</strong></p>
-                    <p className="mt-1">성명: 파워뱅크 전시장 관리자</p>
-                    <p>연락처: auddls0109@gmail.com</p>
+                    <p className="mt-1">성명: 정태산 (대표)</p>
+                    <p>전화: 010-3532-3799</p>
+                    <p>이메일: symict1@naver.com</p>
                   </div>
                 </li>
                 <li>정보주체께서는 회사의 서비스(또는 사업)을 이용하시면서 발생한 모든 개인정보 보호 관련 문의, 불만처리, 피해구제 등에 관한 사항을 개인정보 보호책임자 및 담당부서로 문의하실 수 있습니다. 회사는 정보주체의 문의에 대해 지체없이 답변 및 처리해드릴 것입니다.</li>
@@ -174,7 +175,7 @@ export default function PrivacyPage() {
 
             <section>
               <h2 className="text-base font-bold text-gray-900 mb-2">제10조 (개인정보처리방침 변경)</h2>
-              <p>이 개인정보처리방침은 2024년 1월 1일부터 적용됩니다. 이전의 개인정보처리방침은 아래에서 확인하실 수 있습니다.</p>
+              <p>이 개인정보처리방침은 2026년 7월 23일부터 적용됩니다. 이전의 개인정보처리방침은 아래에서 확인하실 수 있습니다.</p>
             </section>
 
             <section>

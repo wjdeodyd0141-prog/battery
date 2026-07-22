@@ -4,7 +4,7 @@ export default function TermsPage() {
       <div className="max-w-3xl mx-auto px-4">
         <div className="bg-white rounded-2xl border border-gray-100 p-8 sm:p-12">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">이용약관</h1>
-          <p className="text-sm text-gray-400 mb-8">시행일: 2024년 1월 1일</p>
+          <p className="text-sm text-gray-400 mb-8">시행일: 2026년 7월 23일</p>
 
           <div className="prose prose-sm max-w-none text-gray-700 space-y-6">
 
