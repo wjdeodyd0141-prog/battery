@@ -49,6 +49,7 @@ model User {
   username  String   @unique
   password  String?
   kakaoId   String?  @unique
+  googleId  String?  @unique
   name      String?
   phone     String?
   address   String?

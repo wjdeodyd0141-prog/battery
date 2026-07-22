@@ -1,42 +1,25 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Zap, Eye, EyeOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useAuth } from '@/lib/auth';
+import { Zap } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
 import { toast } from 'sonner';
 
-export default function LoginPage() {
-  const { login } = useAuth();
-  const router = useRouter();
-  const [form, setForm] = useState({ username: '', password: '' });
-  const [loading, setLoading] = useState(false);
-  const [showPw, setShowPw] = useState(false);
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-  const handleKakaoLogin = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-    window.location.href = `${apiUrl}/auth/kakao`;
-  };
+function LoginInner() {
+  const searchParams = useSearchParams();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.username.trim()) { toast.error('아이디를 입력해주세요.'); return; }
-    if (!form.password) { toast.error('비밀번호를 입력해주세요.'); return; }
-    setLoading(true);
-    try {
-      await login(form.username, form.password);
-      toast.success('로그인 성공!');
-      router.push('/');
-    } catch (err: any) {
-      toast.error(err.message || '로그인에 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error === 'kakao_failed') toast.error('카카오 로그인에 실패했습니다. 다시 시도해 주세요.');
+    if (error === 'google_failed') toast.error('구글 로그인에 실패했습니다. 다시 시도해 주세요.');
+    if (error === 'invalid_state') toast.error('인증 세션이 만료됐습니다. 다시 시도해 주세요.');
+  }, []);
+
+  const handleKakao = () => { window.location.href = `${API_URL}/auth/kakao`; };
+  const handleGoogle = () => { window.location.href = `${API_URL}/auth/google`; };
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -51,23 +34,17 @@ export default function LoginPage() {
             파워뱅크 전시장에서 최고 품질의 배터리를 지금 바로 만나보세요.
           </p>
           <div className="mt-10 space-y-3 text-sm text-blue-200">
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">✓</div>
-              3만원 이상 무료 배송
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">✓</div>
-              정품 인증 100% 보장
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">✓</div>
-              당일 발송 (오후 2시 전 주문)
-            </div>
+            {['3만원 이상 무료 배송', '정품 인증 100% 보장', '당일 발송 (오후 2시 전 주문)'].map((t) => (
+              <div key={t} className="flex items-center gap-3">
+                <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">✓</div>
+                {t}
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* 오른쪽 폼 */}
+      {/* 오른쪽 */}
       <div className="flex-1 flex items-center justify-center px-4 py-12 sm:px-8">
         <div className="w-full max-w-md">
           {/* 모바일 로고 */}
@@ -80,82 +57,63 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">로그인</h1>
-            <p className="text-gray-500 mt-1.5">아이디와 비밀번호를 입력해주세요.</p>
+          <div className="mb-8 text-center">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">로그인 / 회원가입</h1>
+            <p className="text-gray-500 mt-2 text-sm">소셜 계정으로 간편하게 이용하세요</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-1.5">
-              <Label htmlFor="username" className="text-sm font-medium text-gray-700">아이디</Label>
-              <Input
-                id="username"
-                placeholder="아이디 입력"
-                value={form.username}
-                onChange={(e) => setForm({ ...form, username: e.target.value })}
-                className="h-11 rounded-xl border-gray-200 focus:border-blue-500"
-               
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">비밀번호</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPw ? 'text' : 'password'}
-                  placeholder="비밀번호 입력"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="h-11 rounded-xl border-gray-200 focus:border-blue-500 pr-10"
-                 
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  onClick={() => setShowPw((v) => !v)}
-                >
-                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full h-11 bg-blue-600 hover:bg-blue-700 rounded-xl font-semibold text-base mt-2"
-              disabled={loading}
+          <div className="space-y-3">
+            {/* 카카오 */}
+            <button
+              type="button"
+              onClick={handleKakao}
+              className="w-full h-12 flex items-center justify-center gap-3 bg-[#FEE500] hover:bg-[#f0d800] rounded-xl font-semibold text-[#191919] text-sm transition-colors shadow-sm"
             >
-              {loading ? '로그인 중...' : '로그인'}
-            </Button>
-          </form>
+              <svg width="20" height="20" viewBox="0 0 18 18" fill="none">
+                <path fillRule="evenodd" clipRule="evenodd" d="M9 1.5C4.858 1.5 1.5 4.134 1.5 7.387c0 2.07 1.3 3.889 3.27 4.963l-.834 3.113a.281.281 0 0 0 .432.305L8.1 13.524c.294.04.593.063.9.063 4.142 0 7.5-2.634 7.5-5.887C16.5 4.134 13.142 1.5 9 1.5z" fill="#191919"/>
+              </svg>
+              카카오로 계속하기
+            </button>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-gray-50 px-3 text-gray-400">또는</span>
-            </div>
+            {/* 구글 */}
+            <button
+              type="button"
+              onClick={handleGoogle}
+              className="w-full h-12 flex items-center justify-center gap-3 bg-white hover:bg-gray-50 rounded-xl font-semibold text-gray-700 text-sm transition-colors shadow-sm border border-gray-200"
+            >
+              <svg width="20" height="20" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+              구글로 계속하기
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={handleKakaoLogin}
-            className="w-full h-11 flex items-center justify-center gap-2.5 bg-[#FEE500] hover:bg-[#f0d800] rounded-xl font-semibold text-[#000000] text-sm transition-colors"
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fillRule="evenodd" clipRule="evenodd" d="M9 1.5C4.858 1.5 1.5 4.134 1.5 7.387c0 2.07 1.3 3.889 3.27 4.963l-.834 3.113a.281.281 0 0 0 .432.305L8.1 13.524c.294.04.593.063.9.063 4.142 0 7.5-2.634 7.5-5.887C16.5 4.134 13.142 1.5 9 1.5z" fill="#000000"/>
-            </svg>
-            카카오로 로그인
-          </button>
+          <p className="text-xs text-gray-400 text-center mt-6 leading-relaxed">
+            계속 진행하면{' '}
+            <Link href="/terms" className="underline hover:text-gray-600">이용약관</Link>
+            {' '}및{' '}
+            <Link href="/privacy" className="underline hover:text-gray-600">개인정보처리방침</Link>
+            에 동의하는 것으로 간주됩니다.
+          </p>
 
-          <p className="text-sm text-gray-500 text-center mt-4">
-            아직 회원이 아니신가요?{' '}
-            <Link href="/register" className="text-blue-600 hover:underline font-semibold">
-              회원가입
+          <p className="text-center mt-8">
+            <Link href="/admin/login" className="text-xs text-gray-300 hover:text-gray-400 transition-colors">
+              관리자
             </Link>
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>}>
+      <LoginInner />
+    </Suspense>
   );
 }

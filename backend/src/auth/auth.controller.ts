@@ -100,6 +100,39 @@ export class AuthController {
     return { url, statusCode: 302 };
   }
 
+  // Google OAuth
+  @Get('google')
+  @Redirect()
+  googleAuthRedirect() {
+    const state = crypto.randomBytes(16).toString('hex');
+    oauthStates.set(state, Date.now() + 5 * 60 * 1000);
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri!)}&response_type=code&scope=email+profile&state=${state}`;
+    return { url, statusCode: 302 };
+  }
+
+  @Get('google/callback')
+  async googleCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Res() res: Response,
+  ) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const expiry = oauthStates.get(state);
+    if (!state || !expiry || Date.now() > expiry) {
+      return res.redirect(`${frontendUrl}/login?error=invalid_state`);
+    }
+    oauthStates.delete(state);
+    try {
+      const { accessToken } = await this.authService.googleLogin(code);
+      const oauthCode = this.authService.generateOAuthCode(accessToken);
+      return res.redirect(`${frontendUrl}/auth/kakao/callback?code=${oauthCode}`);
+    } catch {
+      return res.redirect(`${frontendUrl}/login?error=google_failed`);
+    }
+  }
+
   // VULN-03: JWT를 URL에 노출하지 않고 일회성 코드로 전달
   @Get('kakao/callback')
   async kakaoCallback(

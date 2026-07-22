@@ -172,6 +172,68 @@ export class AuthService {
     };
   }
 
+  async googleLogin(code: string) {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID!,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        redirect_uri: process.env.GOOGLE_REDIRECT_URI!,
+        grant_type: 'authorization_code',
+      }).toString(),
+    });
+
+    if (!tokenRes.ok) throw new UnauthorizedException('구글 인증에 실패했습니다.');
+    const tokenData = await tokenRes.json();
+
+    const profileRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+
+    if (!profileRes.ok) throw new UnauthorizedException('구글 프로필 조회에 실패했습니다.');
+    const profile = await profileRes.json();
+
+    const googleId = String(profile.id);
+    const googleEmail: string | null = profile.email ?? null;
+    const googleName: string | null = profile.name ?? null;
+
+    let user = await this.prisma.user.findUnique({ where: { googleId } });
+
+    if (!user && googleEmail) {
+      const byEmail = await this.prisma.user.findUnique({ where: { email: googleEmail } });
+      if (byEmail) {
+        user = await this.prisma.user.update({ where: { id: byEmail.id }, data: { googleId } });
+      }
+    }
+
+    let isNewUser = false;
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          googleId,
+          email: googleEmail,
+          username: `google_${googleId}`,
+          password: null,
+          name: googleName,
+          termsAgreedAt: new Date(),
+          privacyAgreedAt: new Date(),
+        },
+      });
+      isNewUser = true;
+    }
+    if (isNewUser) {
+      this.couponService.issueByTrigger(user.id, 'SIGNUP').catch(() => {});
+    }
+
+    const accessToken = this.jwtService.sign(
+      { sub: user.id, username: user.username, type: 'access' },
+      { expiresIn: '1h' },
+    );
+    return { accessToken };
+  }
+
   async kakaoLogin(code: string) {
     const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
       method: 'POST',
