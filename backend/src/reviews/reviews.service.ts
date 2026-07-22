@@ -24,9 +24,17 @@ export class CreateReviewDto {
 export class ReviewsService {
   constructor(private prisma: PrismaService) {}
 
+  private readonly S3_PREFIX = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION || 'ap-northeast-2'}.amazonaws.com/reviews/`;
+
   async create(userId: string, dto: CreateReviewDto) {
     const product = await this.prisma.product.findUnique({ where: { id: dto.productId } });
     if (!product) throw new NotFoundException('상품을 찾을 수 없습니다.');
+
+    // M-5: 리뷰 이미지는 S3 업로드 URL만 허용
+    if (dto.imageUrls?.length) {
+      const invalid = dto.imageUrls.some(url => !url.startsWith(this.S3_PREFIX));
+      if (invalid) throw new ForbiddenException('허용되지 않는 이미지 URL입니다.');
+    }
 
     return this.prisma.review.create({
       data: { userId, ...dto },

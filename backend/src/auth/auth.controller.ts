@@ -26,8 +26,12 @@ export class AuthController {
   }
 
   // VULN-12: Refresh token으로 새 access token 발급
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @Post('refresh')
   refresh(@Body() body: { refreshToken: string }) {
+    if (!body.refreshToken || typeof body.refreshToken !== 'string') {
+      throw new Error('refreshToken이 필요합니다.');
+    }
     return this.authService.refreshAccessToken(body.refreshToken);
   }
 
@@ -66,10 +70,14 @@ export class AuthController {
     }
     oauthStates.delete(state);
 
-    const { accessToken } = await this.authService.kakaoLogin(code);
-    // VULN-03: 토큰 대신 일회성 코드를 URL에 담아 전달
-    const oauthCode = this.authService.generateOAuthCode(accessToken);
-    return res.redirect(`${frontendUrl}/auth/kakao/callback?code=${oauthCode}`);
+    try {
+      const { accessToken } = await this.authService.kakaoLogin(code);
+      // VULN-03: 토큰 대신 일회성 코드를 URL에 담아 전달
+      const oauthCode = this.authService.generateOAuthCode(accessToken);
+      return res.redirect(`${frontendUrl}/auth/kakao/callback?code=${oauthCode}`);
+    } catch {
+      return res.redirect(`${frontendUrl}/login?error=kakao_failed`);
+    }
   }
 
   // VULN-03: 일회성 코드를 실제 JWT로 교환
