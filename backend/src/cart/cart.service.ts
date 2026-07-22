@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface SelectedOption {
@@ -78,6 +78,10 @@ export class CartService {
 
   async updateItem(userId: string, itemId: string, quantity: number) {
     if (quantity <= 0) return this.removeItem(userId, itemId);
+    const item = await this.prisma.cartItem.findFirst({
+      where: { id: itemId, cart: { userId } },
+    });
+    if (!item) throw new ForbiddenException('접근 권한이 없습니다.');
     return this.prisma.cartItem.update({
       where: { id: itemId },
       data: { quantity },
@@ -86,7 +90,9 @@ export class CartService {
   }
 
   async removeItem(userId: string, itemId: string) {
-    return this.prisma.cartItem.delete({ where: { id: itemId } });
+    await this.prisma.cartItem.deleteMany({
+      where: { id: itemId, cart: { userId } },
+    });
   }
 
   async clearCart(userId: string) {

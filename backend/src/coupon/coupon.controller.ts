@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Body, Param, Query, Request, UseGuards } from '@nestjs/common';
 import { CouponService } from './coupon.service';
+import { CreateCouponDto } from './dto/create-coupon.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -13,7 +14,7 @@ export class CouponController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Post('admin/coupons')
-  createCoupon(@Body() body: any) {
+  createCoupon(@Body() body: CreateCouponDto) {
     return this.couponService.createCoupon(body);
   }
 
