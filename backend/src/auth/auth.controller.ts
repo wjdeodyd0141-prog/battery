@@ -96,7 +96,7 @@ export class AuthController {
     const redirectUri = process.env.KAKAO_REDIRECT_URI;
     const state = crypto.randomBytes(16).toString('hex');
     oauthStates.set(state, Date.now() + 5 * 60 * 1000);
-    const url = `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri!)}&response_type=code&state=${state}`;
+    const url = `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri!)}&response_type=code&state=${state}&prompt=login`;
     return { url, statusCode: 302 };
   }
 
