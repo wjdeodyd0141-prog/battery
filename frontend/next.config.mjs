@@ -3,7 +3,7 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
   env: {
-    NEXT_PUBLIC_API_URL: 'https://backend-production-cee9b.up.railway.app/api',
+    NEXT_PUBLIC_API_URL: 'https://api.powerbankmall.co.kr/api',
   },
   images: {
     remotePatterns: [
