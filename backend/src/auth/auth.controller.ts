@@ -1,6 +1,6 @@
 import {
   Controller, Post, Body, Get, UseGuards, Request,
-  Query, Redirect, Res, Req, HttpCode, HttpStatus,
+  Query, Redirect, Res, Req, HttpCode, HttpStatus, UnauthorizedException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Response, Request as ExpressRequest } from 'express';
@@ -62,7 +62,7 @@ export class AuthController {
     const refreshToken = req.cookies?.refreshToken;
     if (!refreshToken || typeof refreshToken !== 'string') {
       this.clearCookies(res);
-      throw new Error('리프레시 토큰이 없습니다.');
+      throw new UnauthorizedException('리프레시 토큰이 없습니다.');
     }
     const result = await this.authService.refreshAccessToken(refreshToken);
     this.setCookies(res, result.accessToken, result.refreshToken);
