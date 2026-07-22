@@ -7,20 +7,17 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { CouponService } from '../coupon/coupon.service';
 
-// VULN-11: 로그인 실패 추적 (계정 잠금)
 interface LoginAttempt { count: number; lockedUntil: number; }
 
-// VULN-03: 카카오 OAuth 일회성 코드 저장
+// VULN-03: 카카오 OAuth 일회성 코드 저장 (accessToken만 임시 보관)
 interface OAuthCode { token: string; expiresAt: number; }
 
 @Injectable()
 export class AuthService {
-  // VULN-11
   private readonly failedLogins = new Map<string, LoginAttempt>();
   private readonly MAX_ATTEMPTS = 5;
   private readonly LOCK_DURATION = 15 * 60 * 1000;
 
-  // VULN-03
   private readonly oauthCodes = new Map<string, OAuthCode>();
 
   constructor(
@@ -29,7 +26,6 @@ export class AuthService {
     private couponService: CouponService,
   ) {}
 
-  // VULN-11: 잠금 여부 확인
   private checkLock(username: string) {
     const a = this.failedLogins.get(username);
     if (a && a.lockedUntil > Date.now()) {
@@ -52,24 +48,19 @@ export class AuthService {
     this.failedLogins.delete(username);
   }
 
-  // VULN-03: 카카오 OAuth 일회성 코드 발급 (60초 유효)
-  generateOAuthCode(token: string): string {
-    const code = crypto.randomBytes(32).toString('hex');
-    this.oauthCodes.set(code, { token, expiresAt: Date.now() + 60_000 });
-    return code;
+  // H-2: 리프레시 토큰을 SHA-256 해시로 저장
+  private hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 
-  exchangeOAuthCode(code: string): string {
-    const entry = this.oauthCodes.get(code);
-    if (!entry || Date.now() > entry.expiresAt) {
-      throw new UnauthorizedException('유효하지 않거나 만료된 코드입니다.');
-    }
-    this.oauthCodes.delete(code);
-    return entry.token;
+  private async saveRefreshToken(userId: string, refreshToken: string): Promise<void> {
+    const tokenHash = this.hashToken(refreshToken);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await this.prisma.refreshToken.create({ data: { userId, tokenHash, expiresAt } });
   }
 
-  // VULN-12: Access Token(1h) + Refresh Token(7d) 발급
-  private signTokens(userId: string, username: string) {
+  // 토큰 쌍 발급 + DB 저장
+  private async signAndSaveTokens(userId: string, username: string) {
     const accessToken = this.jwtService.sign(
       { sub: userId, username, type: 'access' },
       { expiresIn: '1h' },
@@ -78,21 +69,61 @@ export class AuthService {
       { sub: userId, username, type: 'refresh' },
       { expiresIn: '7d' },
     );
+    await this.saveRefreshToken(userId, refreshToken);
     return { accessToken, refreshToken };
   }
 
-  refreshAccessToken(refreshToken: string) {
+  // H-2: DB 검증 + 토큰 로테이션
+  async refreshAccessToken(refreshToken: string) {
     try {
       const payload = this.jwtService.verify(refreshToken) as any;
       if (payload.type !== 'refresh') throw new Error();
-      const accessToken = this.jwtService.sign(
-        { sub: payload.sub, username: payload.username, type: 'access' },
-        { expiresIn: '1h' },
-      );
-      return { accessToken };
+
+      const tokenHash = this.hashToken(refreshToken);
+      const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash } });
+      if (!stored || stored.expiresAt < new Date()) {
+        throw new Error('expired or not found');
+      }
+
+      // 로테이션: 기존 토큰 삭제 후 새로 발급
+      await this.prisma.refreshToken.delete({ where: { tokenHash } });
+      return this.signAndSaveTokens(payload.sub, payload.username);
     } catch {
       throw new UnauthorizedException('유효하지 않은 리프레시 토큰입니다.');
     }
+  }
+
+  // 로그아웃: DB에서 리프레시 토큰 삭제
+  async logout(refreshToken?: string): Promise<void> {
+    if (!refreshToken) return;
+    try {
+      const tokenHash = this.hashToken(refreshToken);
+      await this.prisma.refreshToken.deleteMany({ where: { tokenHash } });
+    } catch { /* ignore */ }
+  }
+
+  // VULN-03: 카카오 OAuth 일회성 코드 발급 (60초 유효)
+  generateOAuthCode(token: string): string {
+    const code = crypto.randomBytes(32).toString('hex');
+    this.oauthCodes.set(code, { token, expiresAt: Date.now() + 60_000 });
+    return code;
+  }
+
+  // VULN-03: 코드 교환 → 쿠키용 토큰 쌍 + 사용자 반환
+  async exchangeOAuthCodeFull(code: string) {
+    const entry = this.oauthCodes.get(code);
+    if (!entry || Date.now() > entry.expiresAt) {
+      throw new UnauthorizedException('유효하지 않거나 만료된 코드입니다.');
+    }
+    this.oauthCodes.delete(code);
+
+    // 저장된 accessToken에서 userId 추출
+    const payload = this.jwtService.decode(entry.token) as any;
+    if (!payload?.sub) throw new UnauthorizedException('코드 디코딩 실패');
+
+    const { accessToken, refreshToken } = await this.signAndSaveTokens(payload.sub, payload.username);
+    const user = await this.getMe(payload.sub);
+    return { accessToken, refreshToken, user };
   }
 
   async register(dto: RegisterDto) {
@@ -105,7 +136,7 @@ export class AuthService {
       throw new ConflictException('필수 약관에 동의해주세요.');
     }
 
-    const hashed = await bcrypt.hash(dto.password, 12); // VULN-14: 비용 계수 12
+    const hashed = await bcrypt.hash(dto.password, 12);
     const now = new Date();
     const user = await this.prisma.user.create({
       data: {
@@ -125,26 +156,23 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    // VULN-11: 잠금 확인
     this.checkLock(dto.username);
 
     const user = await this.prisma.user.findUnique({ where: { username: dto.username } });
     if (!user || !user.password || !(await bcrypt.compare(dto.password, user.password))) {
-      this.recordFail(dto.username); // VULN-11: 실패 기록
+      this.recordFail(dto.username);
       throw new UnauthorizedException('아이디 또는 비밀번호가 올바르지 않습니다.');
     }
 
-    this.clearFail(dto.username); // VULN-11: 성공 시 초기화
-    const { accessToken, refreshToken } = this.signTokens(user.id, user.username);
+    this.clearFail(dto.username);
+    const tokens = await this.signAndSaveTokens(user.id, user.username);
     return {
-      accessToken,
-      refreshToken,
+      ...tokens,
       user: { id: user.id, email: user.email, username: user.username, name: user.name, role: user.role },
     };
   }
 
   async kakaoLogin(code: string) {
-    // 1. 카카오 액세스 토큰 발급
     const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
@@ -160,7 +188,6 @@ export class AuthService {
     if (!tokenRes.ok) throw new UnauthorizedException('카카오 인증에 실패했습니다.');
     const tokenData = await tokenRes.json();
 
-    // 2. 카카오 프로필 조회
     const profileRes = await fetch('https://kapi.kakao.com/v2/user/me', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
@@ -172,10 +199,8 @@ export class AuthService {
     const kakaoEmail: string | null = profile.kakao_account?.email ?? null;
     const kakaoName: string | null = profile.kakao_account?.profile?.nickname ?? null;
 
-    // 3. 기존 카카오 계정 조회
     let user = await this.prisma.user.findUnique({ where: { kakaoId } });
 
-    // 4. 동일 이메일 일반 계정이 있으면 연동
     if (!user && kakaoEmail) {
       const byEmail = await this.prisma.user.findUnique({ where: { email: kakaoEmail } });
       if (byEmail) {
@@ -183,7 +208,6 @@ export class AuthService {
       }
     }
 
-    // 5. 신규 회원 생성
     let isNewUser = false;
     if (!user) {
       user = await this.prisma.user.create({
@@ -203,8 +227,12 @@ export class AuthService {
       this.couponService.issueByTrigger(user.id, 'SIGNUP').catch(() => {});
     }
 
-    const { accessToken, refreshToken } = this.signTokens(user.id, user.username);
-    return { accessToken, refreshToken };
+    // 카카오 콜백: accessToken만 임시 발급 (oauth code에 저장, exchange 시 새 쌍 발급)
+    const accessToken = this.jwtService.sign(
+      { sub: user.id, username: user.username, type: 'access' },
+      { expiresIn: '1h' },
+    );
+    return { accessToken };
   }
 
   async getMe(userId: string) {

@@ -12,7 +12,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   loginWithToken: (token: string, user: User) => void;
   register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -34,11 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) { setLoading(false); return; }
-
     // 캐시된 사용자 정보로 즉시 표시 (깜빡임 제거)
-    const raw = localStorage.getItem(USER_CACHE_KEY);
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(USER_CACHE_KEY) : null;
     if (raw) {
       try {
         setUser(JSON.parse(raw));
@@ -48,14 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // 백그라운드에서 토큰 유효성 검증 및 최신 정보 동기화
+    // 백그라운드에서 쿠키 유효성 검증 및 최신 정보 동기화
     api.get<User>('/auth/me')
       .then(fresh => {
         setUser(fresh);
         localStorage.setItem(USER_CACHE_KEY, JSON.stringify(fresh));
       })
       .catch(() => {
-        localStorage.removeItem('accessToken');
         localStorage.removeItem(USER_CACHE_KEY);
         setUser(null);
       })
@@ -63,16 +59,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    const res = await api.post<{ accessToken: string; refreshToken: string; user: User }>('/auth/login', { username, password });
-    localStorage.setItem('accessToken', res.accessToken);
-    // VULN-12: refresh token 저장
-    if (res.refreshToken) localStorage.setItem('refreshToken', res.refreshToken);
+    const res = await api.post<{ user: User }>('/auth/login', { username, password });
+    // M-4: 토큰은 서버가 httpOnly 쿠키로 설정 — 여기선 user 정보만 캐시
     localStorage.setItem(USER_CACHE_KEY, JSON.stringify(res.user));
     setUser(res.user);
   };
 
-  const loginWithToken = (token: string, userData: User) => {
-    localStorage.setItem('accessToken', token);
+  // 카카오 로그인 후 호출 (쿠키는 이미 설정됨)
+  const loginWithToken = (_token: string, userData: User) => {
     localStorage.setItem(USER_CACHE_KEY, JSON.stringify(userData));
     setUser(userData);
   };
@@ -81,22 +75,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await api.post('/auth/register', data);
   };
 
-  const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+  const logout = async () => {
+    await api.post('/auth/logout', {}).catch(() => {});
     localStorage.removeItem(USER_CACHE_KEY);
     setUser(null);
   };
 
   const refreshUser = async () => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) return;
     try {
       const fresh = await api.get<User>('/auth/me');
       setUser(fresh);
       localStorage.setItem(USER_CACHE_KEY, JSON.stringify(fresh));
     } catch {
-      // 백그라운드 갱신 실패는 무시 — 프로필 저장 자체는 성공
+      // 백그라운드 갱신 실패는 무시
     }
   };
 

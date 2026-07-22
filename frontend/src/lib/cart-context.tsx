@@ -30,10 +30,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // /auth/me와 병렬로 장바구니 선제 로딩 (토큰 존재 시)
+  // 캐시된 사용자 정보가 있으면 선제 로딩 (쿠키 인증)
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (token) refresh();
+    const cached = typeof window !== 'undefined' ? localStorage.getItem('cachedUser') : null;
+    if (cached) refresh();
   }, []);
 
   // 로그아웃 시 장바구니 초기화

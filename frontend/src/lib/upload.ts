@@ -1,10 +1,6 @@
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const BASE_URL = () => process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-function getToken(): string | null {
-  return typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-}
-
 export async function compressImage(file: File, maxWidth = 1200): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -36,12 +32,12 @@ export async function uploadImage(file: File, folder: string): Promise<string> {
   formData.append('folder', folder);
 
   const endpoint = folder === 'reviews' ? '/upload/image/review' : '/upload/image';
-  const token = getToken();
 
+  // M-4: httpOnly 쿠키 인증 — Authorization 헤더 불필요
   const res = await fetch(`${BASE_URL()}${endpoint}`, {
     method: 'POST',
     body: formData,
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: 'include',
   });
 
   if (!res.ok) {

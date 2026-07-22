@@ -67,6 +67,7 @@ model User {
   inquiryReplies  InquiryReply[]
   mileageHistory  MileageHistory[]
   userCoupons     UserCoupon[]
+  refreshTokens   RefreshToken[]
 }
 
 model Category {
@@ -304,4 +305,14 @@ model Review {
 
   user    User    @relation(fields: [userId], references: [id])
   product Product @relation(fields: [productId], references: [id])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

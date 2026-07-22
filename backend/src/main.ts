@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import * as helmet from 'helmet';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -8,6 +9,8 @@ async function bootstrap() {
 
   // VULN-10: Railway 리버스 프록시 뒤에서 실제 클라이언트 IP 추출
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
+  app.use(cookieParser());
 
   // HTTP 보안 헤더 (클릭재킹·XSS·MIME 스니핑 방지)
   app.use((helmet as any).default());

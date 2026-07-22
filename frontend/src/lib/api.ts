@@ -1,52 +1,41 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('accessToken');
-}
-
-// VULN-12: refresh token으로 access token 자동 갱신
+// M-4: 쿠키 기반 인증 — refresh token도 httpOnly 쿠키로 자동 전송
 let isRefreshing = false;
-async function tryRefresh(): Promise<string | null> {
-  if (isRefreshing) return null;
-  const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
-  if (!refreshToken) return null;
+async function tryRefresh(): Promise<boolean> {
+  if (isRefreshing) return false;
   isRefreshing = true;
   try {
     const res = await fetch(`${BASE_URL}/auth/refresh`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
     });
-    if (!res.ok) return null;
-    const { accessToken } = await res.json();
-    localStorage.setItem('accessToken', accessToken);
-    return accessToken;
+    return res.ok;
   } catch {
-    return null;
+    return false;
   } finally {
     isRefreshing = false;
   }
 }
 
 async function request<T>(path: string, options: RequestInit = {}, retry = true): Promise<T> {
-  const token = getToken();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
 
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers, cache: 'no-store' });
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers,
+    credentials: 'include',
+    cache: 'no-store',
+  });
 
-  // VULN-12: 401 시 refresh 후 1회 재시도
+  // 401 시 refresh 후 1회 재시도
   if (res.status === 401 && retry) {
-    const newToken = await tryRefresh();
-    if (newToken) return request<T>(path, options, false);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-    }
+    const refreshed = await tryRefresh();
+    if (refreshed) return request<T>(path, options, false);
   }
 
   if (!res.ok) {

@@ -1,5 +1,9 @@
-import { Controller, Post, Body, Get, UseGuards, Request, Query, Redirect, Res } from '@nestjs/common';
+import {
+  Controller, Post, Body, Get, UseGuards, Request,
+  Query, Redirect, Res, Req, HttpCode, HttpStatus,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { Response, Request as ExpressRequest } from 'express';
 import * as crypto from 'crypto';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -9,9 +13,26 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 // VULN-04: OAuth CSRF state 저장 (in-memory, 5분 TTL)
 const oauthStates = new Map<string, number>();
 
+const COOKIE_OPTS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'lax') as 'none' | 'lax',
+  path: '/',
+};
+
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+
+  private setCookies(res: Response, accessToken: string, refreshToken: string) {
+    res.cookie('accessToken', accessToken, { ...COOKIE_OPTS, maxAge: 60 * 60 * 1000 });
+    res.cookie('refreshToken', refreshToken, { ...COOKIE_OPTS, maxAge: 7 * 24 * 60 * 60 * 1000 });
+  }
+
+  private clearCookies(res: Response) {
+    res.clearCookie('accessToken', { path: '/' });
+    res.clearCookie('refreshToken', { path: '/' });
+  }
 
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @Post('register')
@@ -21,18 +42,44 @@ export class AuthController {
 
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.login(dto);
+    this.setCookies(res, result.accessToken, result.refreshToken);
+    return { user: result.user };
   }
 
-  // VULN-12: Refresh token으로 새 access token 발급
+  // M-4: 쿠키에서 refresh token 읽어 새 쌍 발급
   @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  refresh(@Body() body: { refreshToken: string }) {
-    if (!body.refreshToken || typeof body.refreshToken !== 'string') {
-      throw new Error('refreshToken이 필요합니다.');
+  async refresh(
+    @Req() req: ExpressRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies?.refreshToken;
+    if (!refreshToken || typeof refreshToken !== 'string') {
+      this.clearCookies(res);
+      throw new Error('리프레시 토큰이 없습니다.');
     }
-    return this.authService.refreshAccessToken(body.refreshToken);
+    const result = await this.authService.refreshAccessToken(refreshToken);
+    this.setCookies(res, result.accessToken, result.refreshToken);
+    return { ok: true };
+  }
+
+  // 로그아웃: 쿠키 제거 + DB에서 토큰 삭제
+  @HttpCode(HttpStatus.OK)
+  @Post('logout')
+  async logout(
+    @Req() req: ExpressRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies?.refreshToken;
+    await this.authService.logout(refreshToken);
+    this.clearCookies(res);
+    return { ok: true };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -54,12 +101,11 @@ export class AuthController {
   }
 
   // VULN-03: JWT를 URL에 노출하지 않고 일회성 코드로 전달
-  // VULN-04: state 파라미터 검증
   @Get('kakao/callback')
   async kakaoCallback(
     @Query('code') code: string,
     @Query('state') state: string,
-    @Res() res: any,
+    @Res() res: Response,
   ) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
@@ -72,7 +118,6 @@ export class AuthController {
 
     try {
       const { accessToken } = await this.authService.kakaoLogin(code);
-      // VULN-03: 토큰 대신 일회성 코드를 URL에 담아 전달
       const oauthCode = this.authService.generateOAuthCode(accessToken);
       return res.redirect(`${frontendUrl}/auth/kakao/callback?code=${oauthCode}`);
     } catch {
@@ -80,11 +125,15 @@ export class AuthController {
     }
   }
 
-  // VULN-03: 일회성 코드를 실제 JWT로 교환
+  // VULN-03: 일회성 코드를 쿠키로 교환 (H-2: DB 저장 리프레시 토큰 발급)
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @Get('kakao/exchange')
-  exchangeOAuthCode(@Query('code') code: string) {
-    const accessToken = this.authService.exchangeOAuthCode(code);
-    return { accessToken };
+  async exchangeOAuthCode(
+    @Query('code') code: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.exchangeOAuthCodeFull(code);
+    this.setCookies(res, result.accessToken, result.refreshToken);
+    return { user: result.user };
   }
 }

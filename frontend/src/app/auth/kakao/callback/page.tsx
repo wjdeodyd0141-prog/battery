@@ -22,16 +22,13 @@ function KakaoCallbackInner() {
       return;
     }
 
-    api.get<{ accessToken: string }>(`/auth/kakao/exchange?code=${code}`)
-      .then(({ accessToken }) => {
-        localStorage.setItem('accessToken', accessToken);
-        return api.get<User>('/auth/me').then((user) => {
-          loginWithToken(accessToken, user);
-          router.replace('/');
-        });
+    // M-4: exchange 응답에서 user 수신, 토큰은 httpOnly 쿠키로 자동 설정됨
+    api.get<{ user: User }>(`/auth/kakao/exchange?code=${code}`)
+      .then(({ user }) => {
+        loginWithToken('', user);
+        router.replace('/');
       })
       .catch(() => {
-        localStorage.removeItem('accessToken');
         router.replace('/login');
       });
   }, []);
