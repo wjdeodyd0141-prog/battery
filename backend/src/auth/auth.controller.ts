@@ -108,7 +108,7 @@ export class AuthController {
     oauthStates.set(state, Date.now() + 5 * 60 * 1000);
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const redirectUri = process.env.GOOGLE_REDIRECT_URI;
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri!)}&response_type=code&scope=email+profile&state=${state}`;
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri!)}&response_type=code&scope=email+profile&state=${state}&prompt=select_account`;
     return { url, statusCode: 302 };
   }
 
