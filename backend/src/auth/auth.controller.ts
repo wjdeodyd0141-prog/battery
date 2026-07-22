@@ -127,7 +127,7 @@ export class AuthController {
     try {
       const { accessToken } = await this.authService.googleLogin(code);
       const oauthCode = this.authService.generateOAuthCode(accessToken);
-      return res.redirect(`${frontendUrl}/auth/kakao/callback?code=${oauthCode}`);
+      return res.redirect(`${frontendUrl}/auth/google/callback?code=${oauthCode}`);
     } catch {
       return res.redirect(`${frontendUrl}/login?error=google_failed`);
     }
