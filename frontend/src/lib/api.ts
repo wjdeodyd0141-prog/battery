@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
 // M-4: 쿠키 기반 인증 — refresh token도 httpOnly 쿠키로 자동 전송
 let isRefreshing = false;
