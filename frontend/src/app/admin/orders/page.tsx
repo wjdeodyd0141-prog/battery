@@ -310,23 +310,23 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
           </section>
 
           {/* 반품/교환 요청 처리 */}
-          {(order as any).returnStatus === 'REQUESTED' && (
+          {order.returnStatus === 'REQUESTED' && (
             <>
               <div className="border-t border-gray-100" />
               <section>
                 <h3 className="text-sm font-semibold text-orange-700 mb-3 flex items-center gap-2">
                   <RotateCcw className="w-4 h-4" />
-                  {(order as any).returnType === 'RETURN' ? '반품' : '교환'} 요청 처리
+                  {order.returnType === 'RETURN' ? '반품' : '교환'} 요청 처리
                 </h3>
                 <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl space-y-3">
                   <div className="text-sm text-gray-700">
-                    <span className="font-semibold">신청 유형:</span> {(order as any).returnType === 'RETURN' ? '반품 (환불)' : '교환'}
+                    <span className="font-semibold">신청 유형:</span> {order.returnType === 'RETURN' ? '반품 (환불)' : '교환'}
                   </div>
                   <div className="text-sm text-gray-700">
-                    <span className="font-semibold">사유:</span> {(order as any).returnReason}
+                    <span className="font-semibold">사유:</span> {order.returnReason}
                   </div>
                   <div className="text-sm text-gray-500">
-                    신청일: {new Date((order as any).returnRequestedAt).toLocaleDateString('ko-KR')}
+                    신청일: {order.returnRequestedAt ? new Date(order.returnRequestedAt).toLocaleDateString('ko-KR') : '-'}
                   </div>
                   <input
                     type="text"

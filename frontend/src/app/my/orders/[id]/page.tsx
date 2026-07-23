@@ -277,7 +277,7 @@ export default function OrderDetailPage() {
         )}
 
         {/* 반품/교환 신청 */}
-        {(order.status === 'SHIPPED' || order.status === 'DELIVERED') && !(order as any).returnStatus && (
+        {(order.status === 'SHIPPED' || order.status === 'DELIVERED') && !order.returnStatus && (
           <div>
             {!showReturnForm ? (
               <button
@@ -329,22 +329,22 @@ export default function OrderDetailPage() {
         )}
 
         {/* 반품/교환 신청 현황 */}
-        {(order as any).returnStatus && (
+        {order.returnStatus && (
           <div className={`rounded-2xl border p-4 ${
-            (order as any).returnStatus === 'REQUESTED' ? 'bg-orange-50 border-orange-200' :
-            (order as any).returnStatus === 'APPROVED'  ? 'bg-emerald-50 border-emerald-200' :
-                                                          'bg-gray-50 border-gray-200'
+            order.returnStatus === 'REQUESTED' ? 'bg-orange-50 border-orange-200' :
+            order.returnStatus === 'APPROVED'  ? 'bg-emerald-50 border-emerald-200' :
+                                                 'bg-gray-50 border-gray-200'
           }`}>
             <p className="text-sm font-semibold mb-1">
-              {(order as any).returnType === 'RETURN' ? '반품' : '교환'} 신청 현황
+              {order.returnType === 'RETURN' ? '반품' : '교환'} 신청 현황
             </p>
-            <p className="text-xs text-gray-600">사유: {(order as any).returnReason}</p>
+            <p className="text-xs text-gray-600">사유: {order.returnReason}</p>
             <p className={`text-xs font-semibold mt-2 ${
-              (order as any).returnStatus === 'REQUESTED' ? 'text-orange-600' :
-              (order as any).returnStatus === 'APPROVED'  ? 'text-emerald-600' : 'text-gray-500'
+              order.returnStatus === 'REQUESTED' ? 'text-orange-600' :
+              order.returnStatus === 'APPROVED'  ? 'text-emerald-600' : 'text-gray-500'
             }`}>
-              {(order as any).returnStatus === 'REQUESTED' ? '⏳ 검토 중' :
-               (order as any).returnStatus === 'APPROVED'  ? '✅ 승인됨' : '❌ 거절됨'}
+              {order.returnStatus === 'REQUESTED' ? '⏳ 검토 중' :
+               order.returnStatus === 'APPROVED'  ? '✅ 승인됨' : '❌ 거절됨'}
             </p>
           </div>
         )}

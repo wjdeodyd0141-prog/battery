@@ -135,6 +135,11 @@ export interface Order {
   trackingNumber: string | null;
   carrier: string | null;
   adminMemo: string | null;
+  mileageUsed?: number;
+  returnStatus?: 'REQUESTED' | 'APPROVED' | 'REJECTED';
+  returnType?: 'RETURN' | 'EXCHANGE';
+  returnReason?: string;
+  returnRequestedAt?: string;
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];

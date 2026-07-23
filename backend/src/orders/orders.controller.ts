@@ -46,6 +46,14 @@ export class OrdersController {
     return this.ordersService.getAdminOrder(id);
   }
 
+  // 정적 경로는 반드시 :id 라우트보다 먼저 위치해야 함
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @Get('return-requests')
+  getReturnRequests() {
+    return this.ordersService.getReturnRequests();
+  }
+
   @Get(':id')
   getOrder(@Request() req, @Param('id') id: string) {
     return this.ordersService.getOrder(id, req.user.id);
@@ -63,13 +71,6 @@ export class OrdersController {
     @Body() body: { returnType: 'RETURN' | 'EXCHANGE'; returnReason: string },
   ) {
     return this.ordersService.requestReturn(id, req.user.id, body.returnType, body.returnReason);
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN')
-  @Get('return-requests')
-  getReturnRequests() {
-    return this.ordersService.getReturnRequests();
   }
 
   @UseGuards(RolesGuard)

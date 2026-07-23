@@ -108,7 +108,7 @@ export default function OrdersPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-900 truncate">
-                          {firstItem?.product.name}
+                          {firstItem?.product?.name}
                           {order.items.length > 1 && (
                             <span className="text-gray-400 font-normal"> 외 {order.items.length - 1}건</span>
                           )}
