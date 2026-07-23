@@ -17,7 +17,7 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const { addItem } = useCart();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   const handleAddToCart = async (e: React.MouseEvent) => {
@@ -27,13 +27,7 @@ export default function ProductCard({ product }: Props) {
       await addItem(product.id, 1);
       toast.success('장바구니에 추가되었습니다.');
     } catch (err: any) {
-      if (err.message === 'Unauthorized' || err.message?.includes('인증')) {
-        toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
-        await logout();
-        router.push('/login');
-      } else {
-        toast.error(err.message || '오류가 발생했습니다.');
-      }
+      toast.error(err.message || '오류가 발생했습니다.');
     }
   };
 
