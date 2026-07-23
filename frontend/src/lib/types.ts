@@ -73,6 +73,7 @@ export interface Product {
   specs: ProductSpecs | null;
   mileageRate: number | null;
   isActive: boolean;
+  isFeatured: boolean;
   categoryId: string;
   category: Category;
   optionGroups?: ProductOptionGroup[];

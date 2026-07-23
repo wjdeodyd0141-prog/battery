@@ -46,6 +46,12 @@ export class ProductsController {
     );
   }
 
+  // 정적 경로는 반드시 :slug 위에 위치해야 함
+  @Get('featured')
+  getFeatured() {
+    return this.productsService.getFeatured();
+  }
+
   @Get(':slug')
   findOne(@Param('slug') slug: string) {
     return this.productsService.findOne(slug);
@@ -56,6 +62,13 @@ export class ProductsController {
   @Post()
   create(@Body() dto: CreateProductDto) {
     return this.productsService.create(dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Patch(':id/featured')
+  toggleFeatured(@Param('id') id: string) {
+    return this.productsService.toggleFeatured(id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

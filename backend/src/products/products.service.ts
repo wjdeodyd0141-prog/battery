@@ -60,6 +60,23 @@ export class ProductsService {
     return product;
   }
 
+  async getFeatured() {
+    return this.prisma.product.findMany({
+      where: { isFeatured: true, isActive: true },
+      include: { category: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async toggleFeatured(id: string) {
+    const product = await this.prisma.product.findUnique({ where: { id } });
+    if (!product) throw new Error('상품을 찾을 수 없습니다.');
+    return this.prisma.product.update({
+      where: { id },
+      data: { isFeatured: !product.isFeatured },
+    });
+  }
+
   async create(dto: CreateProductDto) {
     return this.prisma.product.create({ data: dto });
   }

@@ -14,8 +14,7 @@ import StoreInfoSection from '@/components/home/store-info-section';
 
 async function getFeaturedProducts(): Promise<Product[]> {
   try {
-    const products = await api.get<Product[]>('/products');
-    return products.slice(0, 8);
+    return await api.get<Product[]>('/products/featured');
   } catch {
     return [];
   }

@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Edit2, Eye, EyeOff, Package, Settings2, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { Plus, Edit2, Eye, EyeOff, Package, Settings2, ChevronLeft, ChevronRight, Search, X, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,14 @@ export default function AdminProductsPage() {
     try {
       await api.patch(`/products/${product.id}`, { isActive: !product.isActive });
       toast.success(product.isActive ? '상품을 비활성화했습니다.' : '상품을 활성화했습니다.');
+      load();
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+  const toggleFeatured = async (product: Product) => {
+    try {
+      await api.patch(`/products/${product.id}/featured`, {});
+      toast.success(product.isFeatured ? '추천 상품에서 해제했습니다.' : '추천 상품으로 등록했습니다.');
       load();
     } catch (err: any) { toast.error(err.message); }
   };
@@ -187,6 +195,7 @@ export default function AdminProductsPage() {
                   <th className="text-right px-4 py-3 font-medium text-gray-600">적립률</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-600">재고</th>
                   <th className="text-center px-4 py-3 font-medium text-gray-600">상태</th>
+                  <th className="text-center px-4 py-3 font-medium text-gray-600">추천</th>
                   <th className="text-center px-4 py-3 font-medium text-gray-600">관리</th>
                 </tr>
               </thead>
@@ -208,6 +217,15 @@ export default function AdminProductsPage() {
                       <Badge variant={p.isActive ? 'default' : 'secondary'} className={p.isActive ? 'bg-green-50 text-green-700' : ''}>
                         {p.isActive ? '판매중' : '숨김'}
                       </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => toggleFeatured(p)}
+                        title={p.isFeatured ? '추천 해제' : '추천 등록'}
+                        className={`p-1.5 rounded-lg transition-colors ${p.isFeatured ? 'text-amber-400 hover:text-amber-500' : 'text-gray-300 hover:text-amber-400'}`}
+                      >
+                        <Star className={`w-4 h-4 ${p.isFeatured ? 'fill-amber-400' : ''}`} />
+                      </button>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
