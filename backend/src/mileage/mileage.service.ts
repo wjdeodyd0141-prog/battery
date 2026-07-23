@@ -43,14 +43,17 @@ export class MileageService {
   }
 
   async spendMileage(userId: string, amount: number, orderId: string) {
-    const { balance } = await this.getBalance(userId);
-    if (balance < amount) throw new BadRequestException('마일리지가 부족합니다.');
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { id: userId },
+    if (amount <= 0) throw new BadRequestException('마일리지 사용 금액은 0보다 커야 합니다.');
+    await this.prisma.$transaction(async (tx) => {
+      // 잔액 확인과 차감을 단일 UPDATE로 처리 — 경쟁 조건 방지
+      const result = await tx.user.updateMany({
+        where: { id: userId, mileageBalance: { gte: amount } },
         data: { mileageBalance: { decrement: amount } },
-      }),
-      this.prisma.mileageHistory.create({
+      });
+      if (result.count === 0) {
+        throw new BadRequestException('마일리지가 부족합니다.');
+      }
+      await tx.mileageHistory.create({
         data: {
           userId,
           amount: -amount,
@@ -58,8 +61,8 @@ export class MileageService {
           reason: `결제 사용 (#${orderId.slice(0, 8).toUpperCase()})`,
           orderId,
         },
-      }),
-    ]);
+      });
+    });
   }
 
   async refundMileage(userId: string, amount: number, orderId: string) {

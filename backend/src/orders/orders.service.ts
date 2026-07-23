@@ -74,13 +74,10 @@ export class OrdersService {
     const shippingFee = itemsTotal >= 30000 ? 0 : 3000;
     const totalAmount = itemsTotal + shippingFee;
 
-    // 마일리지 검증
-    const mileageUsed = dto.mileageUsed ?? 0;
-    if (mileageUsed > 0) {
-      if (mileageUsed > totalAmount) throw new BadRequestException('마일리지 사용 금액이 주문 금액을 초과합니다.');
-      const { balance } = await this.mileageService.getBalance(userId);
-      if (balance < mileageUsed) throw new BadRequestException('마일리지가 부족합니다.');
-    }
+    // 마일리지 검증 (음수 방지 + 주문금액 초과 방지)
+    const mileageUsed = Math.floor(dto.mileageUsed ?? 0);
+    if (mileageUsed < 0) throw new BadRequestException('마일리지 사용 금액은 0 이상이어야 합니다.');
+    if (mileageUsed > totalAmount) throw new BadRequestException('마일리지 사용 금액이 주문 금액을 초과합니다.');
 
     const order = await this.prisma.order.create({
       data: {
