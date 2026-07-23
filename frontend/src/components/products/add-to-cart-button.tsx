@@ -51,7 +51,12 @@ export default function AddToCartButton({ product }: Props) {
       toast.success(`${product.name}을(를) 장바구니에 추가했습니다.`);
       if (redirect) router.push('/cart');
     } catch (err: any) {
-      toast.error(err.message || '오류가 발생했습니다.');
+      if (err.message === 'Unauthorized' || err.message?.includes('인증')) {
+        toast.error('로그인이 필요합니다. 다시 로그인해주세요.');
+        router.push('/login');
+      } else {
+        toast.error(err.message || '오류가 발생했습니다.');
+      }
     } finally {
       setLoading(false);
     }
