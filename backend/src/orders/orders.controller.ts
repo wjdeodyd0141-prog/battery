@@ -56,6 +56,36 @@ export class OrdersController {
     return this.ordersService.cancelOrderByUser(id, req.user.id);
   }
 
+  @Post(':id/return-request')
+  requestReturn(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { returnType: 'RETURN' | 'EXCHANGE'; returnReason: string },
+  ) {
+    return this.ordersService.requestReturn(id, req.user.id, body.returnType, body.returnReason);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @Get('return-requests')
+  getReturnRequests() {
+    return this.ordersService.getReturnRequests();
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @Post(':id/approve-return')
+  approveReturn(@Param('id') id: string) {
+    return this.ordersService.adminApproveReturn(id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @Post(':id/reject-return')
+  rejectReturn(@Param('id') id: string, @Body() body: { rejectReason: string }) {
+    return this.ordersService.adminRejectReturn(id, body.rejectReason);
+  }
+
   @Post(':id/complete-free')
   completeFreeOrder(@Request() req, @Param('id') id: string) {
     return this.ordersService.completeFreeOrder(id, req.user.id);

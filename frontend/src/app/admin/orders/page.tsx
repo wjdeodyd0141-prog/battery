@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
-  ArrowLeft, Search, Package, Truck, RefreshCw,
+  ArrowLeft, Search, Package, Truck, RefreshCw, RotateCcw,
   ChevronLeft, ChevronRight, User, Phone, MapPin, CreditCard, StickyNote,
   Edit3, X, AlertTriangle, XCircle
 } from 'lucide-react';
@@ -110,6 +110,8 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
   const [refundReason, setRefundReason] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
   const [processingRefund, setProcessingRefund] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [processingReturn, setProcessingReturn] = useState(false);
 
   const handleRefund = async () => {
     if (!refundReason.trim()) { toast.error('환불 사유를 입력해주세요.'); return; }
@@ -306,6 +308,70 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
               </div>
             )}
           </section>
+
+          {/* 반품/교환 요청 처리 */}
+          {(order as any).returnStatus === 'REQUESTED' && (
+            <>
+              <div className="border-t border-gray-100" />
+              <section>
+                <h3 className="text-sm font-semibold text-orange-700 mb-3 flex items-center gap-2">
+                  <RotateCcw className="w-4 h-4" />
+                  {(order as any).returnType === 'RETURN' ? '반품' : '교환'} 요청 처리
+                </h3>
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl space-y-3">
+                  <div className="text-sm text-gray-700">
+                    <span className="font-semibold">신청 유형:</span> {(order as any).returnType === 'RETURN' ? '반품 (환불)' : '교환'}
+                  </div>
+                  <div className="text-sm text-gray-700">
+                    <span className="font-semibold">사유:</span> {(order as any).returnReason}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    신청일: {new Date((order as any).returnRequestedAt).toLocaleDateString('ko-KR')}
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="거절 사유 (승인 시 불필요)"
+                    value={rejectReason}
+                    onChange={e => setRejectReason(e.target.value)}
+                    className="w-full px-3 py-2 border border-orange-200 rounded-xl text-sm bg-white focus:outline-none"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        setProcessingReturn(true);
+                        try {
+                          const updated = await api.post<Order>(`/orders/${order.id}/approve-return`, {});
+                          onUpdate({ ...order, ...updated });
+                          toast.success('승인 처리되었습니다.');
+                        } catch (e: any) { toast.error(e.message || '처리 실패'); }
+                        finally { setProcessingReturn(false); }
+                      }}
+                      disabled={processingReturn}
+                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50"
+                    >
+                      {processingReturn ? '처리 중...' : '✅ 승인'}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!rejectReason.trim()) { toast.error('거절 사유를 입력해주세요.'); return; }
+                        setProcessingReturn(true);
+                        try {
+                          const updated = await api.post<Order>(`/orders/${order.id}/reject-return`, { rejectReason });
+                          onUpdate({ ...order, ...updated });
+                          toast.success('거절 처리되었습니다.');
+                        } catch (e: any) { toast.error(e.message || '처리 실패'); }
+                        finally { setProcessingReturn(false); }
+                      }}
+                      disabled={processingReturn}
+                      className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-50"
+                    >
+                      ❌ 거절
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
 
           <div className="border-t border-gray-100" />
 

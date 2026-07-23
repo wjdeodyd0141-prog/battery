@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Zap, MapPin, Phone, User, Check, Truck, Package, PartyPopper, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Zap, MapPin, Phone, User, Check, Truck, Package, PartyPopper, XCircle, AlertTriangle, RotateCcw, RefreshCw } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
@@ -35,6 +35,10 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [showReturnForm, setShowReturnForm] = useState(false);
+  const [returnType, setReturnType] = useState<'RETURN' | 'EXCHANGE'>('RETURN');
+  const [returnReason, setReturnReason] = useState('');
+  const [returning, setReturning] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) { router.push('/login'); return; }
@@ -56,6 +60,22 @@ export default function OrderDetailPage() {
       toast.error(e.message ?? '주문 취소에 실패했습니다.');
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleReturnRequest = async () => {
+    if (!returnReason.trim()) { toast.error('사유를 입력해주세요.'); return; }
+    setReturning(true);
+    try {
+      const updated = await api.post<Order>(`/orders/${params.id}/return-request`, { returnType, returnReason });
+      setOrder(updated);
+      setShowReturnForm(false);
+      setReturnReason('');
+      toast.success(returnType === 'RETURN' ? '반품 신청이 접수되었습니다.' : '교환 신청이 접수되었습니다.');
+    } catch (e: any) {
+      toast.error(e.message ?? '신청에 실패했습니다.');
+    } finally {
+      setReturning(false);
     }
   };
 
@@ -253,6 +273,79 @@ export default function OrderDetailPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* 반품/교환 신청 */}
+        {(order.status === 'SHIPPED' || order.status === 'DELIVERED') && !(order as any).returnStatus && (
+          <div>
+            {!showReturnForm ? (
+              <button
+                onClick={() => setShowReturnForm(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 border border-orange-200 text-orange-500 hover:bg-orange-50 text-sm font-semibold rounded-2xl transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" /> 반품 / 교환 신청
+              </button>
+            ) : (
+              <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5 space-y-4">
+                <p className="font-semibold text-orange-700 text-sm flex items-center gap-2">
+                  <RotateCcw className="w-4 h-4" /> 반품 / 교환 신청
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setReturnType('RETURN')}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-xl border transition-colors ${returnType === 'RETURN' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200'}`}
+                  >
+                    <RotateCcw className="w-4 h-4 inline mr-1" /> 반품 (환불)
+                  </button>
+                  <button
+                    onClick={() => setReturnType('EXCHANGE')}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-xl border transition-colors ${returnType === 'EXCHANGE' ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-600 border-gray-200'}`}
+                  >
+                    <RefreshCw className="w-4 h-4 inline mr-1" /> 교환
+                  </button>
+                </div>
+                <textarea
+                  value={returnReason}
+                  onChange={e => setReturnReason(e.target.value)}
+                  placeholder="사유를 입력해주세요 (예: 상품 불량, 단순 변심 등)"
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-orange-300"
+                  rows={3}
+                />
+                <p className="text-xs text-orange-600">신청 후 관리자 검토 후 처리됩니다. 반품은 상품 수령 후 7일 이내 신청 가능합니다.</p>
+                <div className="flex gap-2">
+                  <button onClick={handleReturnRequest} disabled={returning}
+                    className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl disabled:opacity-50">
+                    {returning ? '처리 중...' : '신청하기'}
+                  </button>
+                  <button onClick={() => { setShowReturnForm(false); setReturnReason(''); }} disabled={returning}
+                    className="flex-1 py-2.5 bg-white border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl">
+                    취소
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 반품/교환 신청 현황 */}
+        {(order as any).returnStatus && (
+          <div className={`rounded-2xl border p-4 ${
+            (order as any).returnStatus === 'REQUESTED' ? 'bg-orange-50 border-orange-200' :
+            (order as any).returnStatus === 'APPROVED'  ? 'bg-emerald-50 border-emerald-200' :
+                                                          'bg-gray-50 border-gray-200'
+          }`}>
+            <p className="text-sm font-semibold mb-1">
+              {(order as any).returnType === 'RETURN' ? '반품' : '교환'} 신청 현황
+            </p>
+            <p className="text-xs text-gray-600">사유: {(order as any).returnReason}</p>
+            <p className={`text-xs font-semibold mt-2 ${
+              (order as any).returnStatus === 'REQUESTED' ? 'text-orange-600' :
+              (order as any).returnStatus === 'APPROVED'  ? 'text-emerald-600' : 'text-gray-500'
+            }`}>
+              {(order as any).returnStatus === 'REQUESTED' ? '⏳ 검토 중' :
+               (order as any).returnStatus === 'APPROVED'  ? '✅ 승인됨' : '❌ 거절됨'}
+            </p>
           </div>
         )}
 
