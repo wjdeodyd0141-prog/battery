@@ -10,6 +10,7 @@ import HomeInquirySection from '@/components/home/inquiry-section';
 import HomeFaqSection from '@/components/home/faq-section';
 import BannerSlider from '@/components/home/banner-slider';
 import PopupManager from '@/components/home/popup-manager';
+import StoreInfoSection from '@/components/home/store-info-section';
 
 async function getFeaturedProducts(): Promise<Product[]> {
   try {
@@ -160,6 +161,9 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      {/* 채널 & 매장 안내 */}
+      <StoreInfoSection />
 
       {/* 문의게시판 */}
       <HomeInquirySection />
