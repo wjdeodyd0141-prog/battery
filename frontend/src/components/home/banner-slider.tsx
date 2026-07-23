@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Banner } from '@/lib/types';
@@ -110,14 +109,11 @@ export default function BannerSlider() {
           className={`absolute inset-0 transition-opacity duration-700 ${idx === current ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
         >
           <Wrapper>
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={b.imageUrl}
               alt={b.title || `배너 ${idx + 1}`}
-              fill
-              className="object-cover pointer-events-none"
-              priority={idx === 0}
-              sizes="100vw"
-              quality={90}
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
               draggable={false}
             />
             {(b.title || b.subtitle) && (
