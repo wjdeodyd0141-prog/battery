@@ -21,7 +21,7 @@ function GoogleCallbackInner() {
       return;
     }
 
-    api.get<{ user: User }>(`/auth/kakao/exchange?code=${code}`)
+    api.get<{ user: User }>(`/auth/oauth/exchange?code=${code}`)
       .then(({ user }) => {
         loginWithToken('', user);
         router.replace('/');

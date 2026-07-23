@@ -190,9 +190,9 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 line-clamp-1">{item.product.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{item.quantity}개 × {item.price.toLocaleString()}원</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{item.quantity}개 × {(item.price + item.optionPrice).toLocaleString()}원</p>
                 </div>
-                <p className="text-sm font-bold text-gray-900 shrink-0">{(item.quantity * item.price).toLocaleString()}원</p>
+                <p className="text-sm font-bold text-gray-900 shrink-0">{(item.quantity * (item.price + item.optionPrice)).toLocaleString()}원</p>
               </div>
             ))}
           </div>

@@ -27,26 +27,43 @@ function SuccessContent() {
 
     const paymentKey = searchParams.get('paymentKey');
     const orderId = searchParams.get('orderId');
+    const isFree = searchParams.get('free') === '1';
     const amount = Number(searchParams.get('amount'));
 
-    if (!paymentKey || !orderId || !amount) {
+    if (!orderId || (!isFree && (!paymentKey || !amount))) {
       setError('잘못된 접근입니다.');
       setStep('error');
       return;
     }
 
-    api.post<{ order: Order }>('/payments/confirm', { paymentKey, orderId, amount })
-      .then(async (data) => {
-        clearCart();
-        await refresh();
-        setOrder(data.order);
-        setStep('done');
-        toast.success('결제가 완료되었습니다!');
-      })
-      .catch((err) => {
-        setError(err.message || '결제 확인 중 오류가 발생했습니다.');
-        setStep('error');
-      });
+    if (isFree) {
+      // 마일리지 전액 결제: completeFreeOrder는 checkout 단계에서 이미 호출됨 — 주문 조회만
+      api.get<Order>(`/orders/${orderId}`)
+        .then(async (order) => {
+          clearCart();
+          await refresh();
+          setOrder(order);
+          setStep('done');
+          toast.success('주문이 완료되었습니다!');
+        })
+        .catch((err) => {
+          setError(err.message || '주문 조회 중 오류가 발생했습니다.');
+          setStep('error');
+        });
+    } else {
+      api.post<{ order: Order }>('/payments/confirm', { paymentKey, orderId, amount })
+        .then(async (data) => {
+          clearCart();
+          await refresh();
+          setOrder(data.order);
+          setStep('done');
+          toast.success('결제가 완료되었습니다!');
+        })
+        .catch((err) => {
+          setError(err.message || '결제 확인 중 오류가 발생했습니다.');
+          setStep('error');
+        });
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

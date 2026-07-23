@@ -79,16 +79,6 @@ export default function BannerSlider() {
 
   if (banners.length === 0) return null;
 
-  const banner = banners[current];
-
-  const Wrapper = banner.linkUrl
-    ? ({ children }: { children: React.ReactNode }) => (
-        <Link href={banner.linkUrl!} className="block w-full h-full" draggable={false}>{children}</Link>
-      )
-    : ({ children }: { children: React.ReactNode }) => (
-        <div className="w-full h-full">{children}</div>
-      );
-
   return (
     <section
       className={`relative w-full overflow-hidden bg-gray-900 select-none h-[140px] sm:h-[200px] lg:h-[300px] ${dragging ? 'cursor-grabbing' : 'cursor-grab'}`}
@@ -101,33 +91,39 @@ export default function BannerSlider() {
       onTouchEnd={onTouchEnd}
       onClickCapture={onClickCapture}
     >
-      {/* 슬라이드 이미지 */}
+      {/* 슬라이드 이미지 — 각 배너마다 자신의 linkUrl로 감싸도록 인라인 처리 */}
       {banners.map((b, idx) => (
         <div
           key={b.id}
           className={`absolute inset-0 transition-opacity duration-700 ${idx === current ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
         >
-          <Wrapper>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={b.imageUrl}
-              alt={b.title || `배너 ${idx + 1}`}
-              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-              draggable={false}
-            />
-            {(b.title || b.subtitle) && (
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent flex items-end pointer-events-none">
-                <div className="px-8 pb-8 sm:px-12 sm:pb-10">
-                  {b.title && (
-                    <p className="text-white text-xl sm:text-3xl font-bold drop-shadow-md">{b.title}</p>
-                  )}
-                  {b.subtitle && (
-                    <p className="text-white/80 text-sm sm:text-base mt-1 drop-shadow">{b.subtitle}</p>
-                  )}
+          {b.linkUrl ? (
+            <Link href={b.linkUrl} className="block w-full h-full" draggable={false}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={b.imageUrl} alt={b.title || `배너 ${idx + 1}`} className="absolute inset-0 w-full h-full object-cover pointer-events-none" draggable={false} />
+              {(b.title || b.subtitle) && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent flex items-end pointer-events-none">
+                  <div className="px-8 pb-8 sm:px-12 sm:pb-10">
+                    {b.title && <p className="text-white text-xl sm:text-3xl font-bold drop-shadow-md">{b.title}</p>}
+                    {b.subtitle && <p className="text-white/80 text-sm sm:text-base mt-1 drop-shadow">{b.subtitle}</p>}
+                  </div>
                 </div>
-              </div>
-            )}
-          </Wrapper>
+              )}
+            </Link>
+          ) : (
+            <div className="w-full h-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={b.imageUrl} alt={b.title || `배너 ${idx + 1}`} className="absolute inset-0 w-full h-full object-cover pointer-events-none" draggable={false} />
+              {(b.title || b.subtitle) && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent flex items-end pointer-events-none">
+                  <div className="px-8 pb-8 sm:px-12 sm:pb-10">
+                    {b.title && <p className="text-white text-xl sm:text-3xl font-bold drop-shadow-md">{b.title}</p>}
+                    {b.subtitle && <p className="text-white/80 text-sm sm:text-base mt-1 drop-shadow">{b.subtitle}</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ))}
 

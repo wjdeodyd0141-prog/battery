@@ -85,6 +85,12 @@ export class MileageService {
   }
 
   async earnFromOrder(orderId: string) {
+    // 중복 적립 방지: 같은 주문에 대한 구매 적립 이력이 이미 있으면 종료
+    const alreadyEarned = await this.prisma.mileageHistory.findFirst({
+      where: { orderId, type: 'EARN', reason: { startsWith: '구매 적립' } },
+    });
+    if (alreadyEarned) return;
+
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { items: { include: { product: true } } },
@@ -122,18 +128,26 @@ export class MileageService {
   async adminGrant(userId: string, amount: number, reason: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    if (amount < 0 && user.mileageBalance + amount < 0) {
-      throw new BadRequestException('차감 금액이 보유 마일리지보다 많습니다.');
-    }
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { id: userId },
-        data: { mileageBalance: { increment: amount } },
-      }),
-      this.prisma.mileageHistory.create({
+
+    await this.prisma.$transaction(async (tx) => {
+      if (amount < 0) {
+        // 차감: 잔액 확인과 차감을 단일 UPDATE로 원자적 처리 — 경쟁 조건 방지
+        const result = await tx.user.updateMany({
+          where: { id: userId, mileageBalance: { gte: -amount } },
+          data: { mileageBalance: { increment: amount } },
+        });
+        if (result.count === 0) throw new BadRequestException('차감 금액이 보유 마일리지보다 많습니다.');
+      } else {
+        await tx.user.update({
+          where: { id: userId },
+          data: { mileageBalance: { increment: amount } },
+        });
+      }
+      await tx.mileageHistory.create({
         data: { userId, amount, type: 'ADMIN', reason },
-      }),
-    ]);
+      });
+    });
+
     return { success: true };
   }
 

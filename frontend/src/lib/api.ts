@@ -1,9 +1,15 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
-// M-4: 쿠키 기반 인증 — refresh token도 httpOnly 쿠키로 자동 전송
+// 동시에 여러 요청이 401을 받을 때, 첫 번째만 refresh하고 나머지는 큐에서 대기 후 재시도
 let isRefreshing = false;
+let refreshQueue: Array<(success: boolean) => void> = [];
+
 async function tryRefresh(): Promise<boolean> {
-  if (isRefreshing) return false;
+  if (isRefreshing) {
+    return new Promise<boolean>((resolve) => {
+      refreshQueue.push(resolve);
+    });
+  }
   isRefreshing = true;
   try {
     const res = await fetch(`${BASE_URL}/auth/refresh`, {
@@ -11,8 +17,13 @@ async function tryRefresh(): Promise<boolean> {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
     });
-    return res.ok;
+    const success = res.ok;
+    refreshQueue.forEach((cb) => cb(success));
+    refreshQueue = [];
+    return success;
   } catch {
+    refreshQueue.forEach((cb) => cb(false));
+    refreshQueue = [];
     return false;
   } finally {
     isRefreshing = false;

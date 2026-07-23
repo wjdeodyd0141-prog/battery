@@ -169,4 +169,16 @@ export class AuthController {
     this.setCookies(res, result.accessToken, result.refreshToken);
     return { user: result.user };
   }
+
+  // 카카오·구글 공용 OAuth 코드 교환 엔드포인트
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Get('oauth/exchange')
+  async exchangeOAuthCodeUniversal(
+    @Query('code') code: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.exchangeOAuthCodeFull(code);
+    this.setCookies(res, result.accessToken, result.refreshToken);
+    return { user: result.user };
+  }
 }
