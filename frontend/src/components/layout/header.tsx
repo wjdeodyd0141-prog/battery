@@ -161,14 +161,9 @@ export default function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href="/login">로그인</Link>
-                  </Button>
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 rounded-lg" asChild>
-                    <Link href="/register">회원가입</Link>
-                  </Button>
-                </div>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/login">로그인</Link>
+                </Button>
               )}
             </div>
 
@@ -222,14 +217,9 @@ export default function Header() {
                 </button>
               </div>
             ) : (
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" asChild>
-                  <Link href="/login" onClick={() => setMobileOpen(false)}>로그인</Link>
-                </Button>
-                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" asChild>
-                  <Link href="/register" onClick={() => setMobileOpen(false)}>회원가입</Link>
-                </Button>
-              </div>
+              <Button className="w-full bg-blue-600 hover:bg-blue-700" asChild>
+                <Link href="/login" onClick={() => setMobileOpen(false)}>로그인</Link>
+              </Button>
             )}
           </div>
         </div>

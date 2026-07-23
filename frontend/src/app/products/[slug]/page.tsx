@@ -10,6 +10,7 @@ import { Product, ProductSpecs } from '@/lib/types';
 import AddToCartButton from '@/components/products/add-to-cart-button';
 import ReviewList from '@/components/products/review-list';
 import DetailImagesSection from '@/components/products/detail-images-section';
+import ImageGallery from '@/components/products/image-gallery';
 
 interface PageProps {
   params: { slug: string };
@@ -41,19 +42,21 @@ export default async function ProductDetailPage({ params }: PageProps) {
     ? Object.entries(product.specs as ProductSpecs).filter(([, v]) => v)
     : [];
 
-  const mainImage = product.imageUrls?.[0];
-  const thumbImages = product.imageUrls?.slice(1, 5) ?? [];
+  const allImages = product.imageUrls ?? [];
   const detailImages = product.detailImageUrls ?? [];
   // VULN-02: XSS 방어 - 허용된 태그/속성만 남기고 이벤트 핸들러 제거
   const detailContent = product.detailContent
     ? sanitizeHtml(product.detailContent, {
-        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h2', 'h3', 'hr']),
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h2', 'h3', 'hr', 'iframe', 'div']),
         allowedAttributes: {
           ...sanitizeHtml.defaults.allowedAttributes,
           img: ['src', 'alt', 'width', 'height', 'style'],
+          iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'style'],
+          div: ['class', 'data-youtube-video', 'style'],
           '*': ['class'],
         },
         allowedSchemes: ['https', 'http'],
+        allowedIframeHostnames: ['www.youtube.com', 'www.youtube-nocookie.com'],
       })
     : null;
 
@@ -65,34 +68,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 mb-6">
 
           {/* 이미지 영역 */}
-          <div className="flex flex-col gap-3">
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden aspect-square relative">
-              {mainImage ? (
-                <Image src={mainImage} alt={product.name} fill className="object-contain p-8" />
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 gap-3">
-                  <Zap className="w-20 h-20 text-gray-200" />
-                  <span className="text-xs text-gray-300">이미지 없음</span>
-                </div>
-              )}
-              {product.stock === 0 && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-2xl">
-                  <Badge variant="secondary" className="text-base px-4 py-1.5">품절</Badge>
-                </div>
-              )}
-            </div>
-
-            {/* 썸네일 */}
-            {thumbImages.length > 0 && (
-              <div className="flex gap-2">
-                {thumbImages.map((url, i) => (
-                  <div key={i} className="relative w-16 h-16 sm:w-20 sm:h-20 border border-gray-200 rounded-xl overflow-hidden bg-white shrink-0">
-                    <Image src={url} alt="" fill className="object-contain p-1.5" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ImageGallery images={allImages} productName={product.name} outOfStock={product.stock === 0} />
 
           {/* 정보 영역 */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-4">

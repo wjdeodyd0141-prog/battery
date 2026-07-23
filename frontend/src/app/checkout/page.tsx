@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Zap } from 'lucide-react';
+import { Zap, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,10 @@ import { Order } from '@/lib/types';
 import { toast } from 'sonner';
 
 declare global {
-  interface Window { TossPayments: any; }
+  interface Window {
+    TossPayments: any;
+    daum: any;
+  }
 }
 
 export default function CheckoutPage() {
@@ -40,10 +43,31 @@ export default function CheckoutPage() {
   }, [user, loading]);
 
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://js.tosspayments.com/v1/payment';
-    document.head.appendChild(script);
-    return () => { document.head.removeChild(script); };
+    const toss = document.createElement('script');
+    toss.src = 'https://js.tosspayments.com/v1/payment';
+    document.head.appendChild(toss);
+
+    const daum = document.createElement('script');
+    daum.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+    document.head.appendChild(daum);
+
+    return () => {
+      document.head.removeChild(toss);
+      if (document.head.contains(daum)) document.head.removeChild(daum);
+    };
+  }, []);
+
+  const openAddressSearch = useCallback(() => {
+    if (!window.daum?.Postcode) {
+      toast.error('주소 검색을 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+    new window.daum.Postcode({
+      oncomplete(data: any) {
+        const fullAddress = data.roadAddress || data.jibunAddress;
+        setForm((f) => ({ ...f, shippingAddress: fullAddress }));
+      },
+    }).open();
   }, []);
 
   if (loading) return null;
@@ -121,7 +145,27 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <Label htmlFor="shippingAddress">배송 주소 *</Label>
-                  <Input id="shippingAddress" value={form.shippingAddress} onChange={update('shippingAddress')} placeholder="주소를 입력해주세요" className="mt-1" />
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      id="shippingAddress"
+                      value={form.shippingAddress}
+                      readOnly
+                      placeholder="주소 검색 버튼을 눌러주세요"
+                      className="flex-1 bg-gray-50 cursor-pointer"
+                      onClick={openAddressSearch}
+                    />
+                    <Button type="button" variant="outline" onClick={openAddressSearch} className="shrink-0 gap-1.5">
+                      <MapPin className="w-4 h-4" />
+                      주소 검색
+                    </Button>
+                  </div>
+                  {form.shippingAddress && (
+                    <Input
+                      className="mt-2"
+                      placeholder="상세 주소 (동, 호수 등)"
+                      onChange={(e) => setForm((f) => ({ ...f, shippingAddress: form.shippingAddress.split(' //')[0] + (e.target.value ? ` // ${e.target.value}` : '') }))}
+                    />
+                  )}
                 </div>
               </div>
             </div>
