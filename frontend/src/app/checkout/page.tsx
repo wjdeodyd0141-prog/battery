@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Zap, MapPin } from 'lucide-react';
+import { Zap, MapPin, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +28,8 @@ export default function CheckoutPage() {
   const [form, setForm] = useState({
     receiverName: '', receiverPhone: '', shippingAddress: '',
   });
+  const [mileageBalance, setMileageBalance] = useState(0);
+  const [mileageInput, setMileageInput] = useState('');
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
@@ -39,6 +41,9 @@ export default function CheckoutPage() {
         receiverPhone: user.phone || '',
         shippingAddress: user.address || '',
       }));
+      api.get<{ balance: number }>('/mileage/balance')
+        .then((r) => setMileageBalance(r.balance))
+        .catch(() => {});
     }
   }, [user, loading]);
 
@@ -78,7 +83,9 @@ export default function CheckoutPage() {
 
   const totalAmount = cart.items.reduce((sum, item) => sum + (item.product.price + (item.optionPrice ?? 0)) * item.quantity, 0);
   const shippingFee = totalAmount >= 30000 ? 0 : 3000;
-  const finalAmount = totalAmount + shippingFee;
+  const orderTotal = totalAmount + shippingFee;
+  const mileageUsed = Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, orderTotal));
+  const finalAmount = orderTotal - mileageUsed;
 
   const update = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [field]: e.target.value });
@@ -102,7 +109,15 @@ export default function CheckoutPage() {
         receiverName: form.receiverName,
         receiverPhone: form.receiverPhone,
         shippingFee,
+        mileageUsed,
       });
+
+      // 마일리지로 전액 결제 시 Toss 결제 없이 완료
+      if (finalAmount === 0) {
+        await api.post(`/orders/${order.id}/complete-free`, {});
+        router.push(`/checkout/success?orderId=${order.id}&free=1`);
+        return;
+      }
 
       const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || '';
       const tossPayments = window.TossPayments(clientKey);
@@ -205,13 +220,48 @@ export default function CheckoutPage() {
                   <span className={shippingFee === 0 ? 'text-green-600 font-medium' : ''}>{shippingFee === 0 ? '무료' : `${shippingFee.toLocaleString()}원`}</span>
                 </div>
               </div>
+
+              {/* 마일리지 사용 */}
+              {mileageBalance > 0 && (
+                <div className="mt-4 p-3 bg-emerald-50 rounded-xl">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Coins className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm font-medium text-emerald-700">마일리지 사용</span>
+                    <span className="text-xs text-emerald-500 ml-auto">보유 {mileageBalance.toLocaleString()}원</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={Math.min(mileageBalance, orderTotal)}
+                      value={mileageInput}
+                      onChange={(e) => setMileageInput(e.target.value)}
+                      placeholder="0"
+                      className="h-8 text-sm bg-white"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+                      onClick={() => setMileageInput(String(Math.min(mileageBalance, orderTotal)))}
+                    >
+                      전액 사용
+                    </Button>
+                  </div>
+                  {mileageUsed > 0 && (
+                    <p className="text-xs text-emerald-600 mt-1.5">-{mileageUsed.toLocaleString()}원 할인 적용</p>
+                  )}
+                </div>
+              )}
+
               <Separator className="my-4" />
               <div className="flex justify-between font-bold text-lg mb-5">
                 <span>최종 금액</span>
                 <span className="text-blue-600">{finalAmount.toLocaleString()}원</span>
               </div>
               <Button type="submit" className="w-full h-12 bg-blue-600 hover:bg-blue-700 font-semibold text-base" disabled={processing}>
-                {processing ? '처리 중...' : `${finalAmount.toLocaleString()}원 결제하기`}
+                {processing ? '처리 중...' : finalAmount === 0 ? '마일리지로 무료 결제' : `${finalAmount.toLocaleString()}원 결제하기`}
               </Button>
               <p className="text-xs text-center text-gray-400 mt-3">토스페이먼츠 보안 결제</p>
             </div>

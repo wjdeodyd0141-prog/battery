@@ -147,6 +147,7 @@ model Order {
   trackingNumber  String?
   carrier         String?
   adminMemo       String?
+  mileageUsed     Int         @default(0)
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 

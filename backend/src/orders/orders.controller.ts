@@ -56,6 +56,11 @@ export class OrdersController {
     return this.ordersService.cancelOrderByUser(id, req.user.id);
   }
 
+  @Post(':id/complete-free')
+  completeFreeOrder(@Request() req, @Param('id') id: string) {
+    return this.ordersService.completeFreeOrder(id, req.user.id);
+  }
+
   @Delete(':id/pending')
   deletePendingOrder(@Request() req, @Param('id') id: string) {
     return this.ordersService.deletePendingOrder(id, req.user.id);

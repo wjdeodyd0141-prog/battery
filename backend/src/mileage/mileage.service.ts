@@ -42,6 +42,45 @@ export class MileageService {
     return { rate };
   }
 
+  async spendMileage(userId: string, amount: number, orderId: string) {
+    const { balance } = await this.getBalance(userId);
+    if (balance < amount) throw new BadRequestException('마일리지가 부족합니다.');
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { mileageBalance: { decrement: amount } },
+      }),
+      this.prisma.mileageHistory.create({
+        data: {
+          userId,
+          amount: -amount,
+          type: 'USE',
+          reason: `결제 사용 (#${orderId.slice(0, 8).toUpperCase()})`,
+          orderId,
+        },
+      }),
+    ]);
+  }
+
+  async refundMileage(userId: string, amount: number, orderId: string) {
+    if (amount <= 0) return;
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { mileageBalance: { increment: amount } },
+      }),
+      this.prisma.mileageHistory.create({
+        data: {
+          userId,
+          amount,
+          type: 'EARN',
+          reason: `주문 취소 마일리지 환급 (#${orderId.slice(0, 8).toUpperCase()})`,
+          orderId,
+        },
+      }),
+    ]);
+  }
+
   async earnFromOrder(orderId: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },

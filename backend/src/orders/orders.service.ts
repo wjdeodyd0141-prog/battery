@@ -18,6 +18,7 @@ export interface CreateOrderDto {
   receiverName: string;
   receiverPhone: string;
   shippingFee?: number;
+  mileageUsed?: number;
 }
 
 export interface OrderQueryDto {
@@ -73,10 +74,19 @@ export class OrdersService {
     const shippingFee = itemsTotal >= 30000 ? 0 : 3000;
     const totalAmount = itemsTotal + shippingFee;
 
-    return this.prisma.order.create({
+    // 마일리지 검증
+    const mileageUsed = dto.mileageUsed ?? 0;
+    if (mileageUsed > 0) {
+      if (mileageUsed > totalAmount) throw new BadRequestException('마일리지 사용 금액이 주문 금액을 초과합니다.');
+      const { balance } = await this.mileageService.getBalance(userId);
+      if (balance < mileageUsed) throw new BadRequestException('마일리지가 부족합니다.');
+    }
+
+    const order = await this.prisma.order.create({
       data: {
         userId,
         totalAmount,
+        mileageUsed,
         shippingAddress: dto.shippingAddress,
         receiverName: dto.receiverName,
         receiverPhone: dto.receiverPhone,
@@ -84,6 +94,13 @@ export class OrdersService {
       },
       include: { items: { include: { product: true } } },
     });
+
+    // 마일리지 차감 (주문 생성 후)
+    if (mileageUsed > 0) {
+      await this.mileageService.spendMileage(userId, mileageUsed, order.id);
+    }
+
+    return order;
   }
 
   async confirmPayment(orderId: string, paymentKey: string, amount: number) {
@@ -92,7 +109,8 @@ export class OrdersService {
       include: { items: true },
     });
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
-    if (order.totalAmount !== amount) throw new BadRequestException('결제 금액이 일치하지 않습니다.');
+    const expectedAmount = order.totalAmount - (order.mileageUsed ?? 0);
+    if (expectedAmount !== amount) throw new BadRequestException('결제 금액이 일치하지 않습니다.');
 
     // 결제 확인 + 재고 차감을 트랜잭션으로 처리
     return this.prisma.$transaction(async (tx) => {
@@ -116,6 +134,31 @@ export class OrdersService {
       return tx.order.update({
         where: { id: orderId },
         data: { status: 'PAID', paymentKey, paidAt: new Date() },
+        include: { items: { include: { product: true } } },
+      });
+    });
+  }
+
+  async completeFreeOrder(orderId: string, userId: string) {
+    const order = await this.prisma.order.findFirst({ where: { id: orderId, userId }, include: { items: true } });
+    if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
+    if (order.status !== 'PENDING') throw new BadRequestException('이미 처리된 주문입니다.');
+    const paymentAmount = order.totalAmount - (order.mileageUsed ?? 0);
+    if (paymentAmount !== 0) throw new BadRequestException('마일리지로 전액 결제된 주문이 아닙니다.');
+
+    return this.prisma.$transaction(async (tx) => {
+      for (const item of order.items) {
+        const updated = await tx.product.updateMany({
+          where: { id: item.productId, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
+        });
+        if (updated.count === 0) throw new BadRequestException('재고가 부족합니다.');
+      }
+      const cart = await tx.cart.findUnique({ where: { userId: order.userId } });
+      if (cart) await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+      return tx.order.update({
+        where: { id: orderId },
+        data: { status: 'PAID', paidAt: new Date() },
         include: { items: { include: { product: true } } },
       });
     });
@@ -219,7 +262,7 @@ export class OrdersService {
     }
 
     // 재고 복원 + 상태 변경을 트랜잭션으로 처리
-    return this.prisma.$transaction(async (tx) => {
+    const cancelled = await this.prisma.$transaction(async (tx) => {
       for (const item of order.items) {
         await tx.product.update({
           where: { id: item.productId },
@@ -232,6 +275,13 @@ export class OrdersService {
         include: { items: { include: { product: true } } },
       });
     });
+
+    // 마일리지 환급
+    if ((order as any).mileageUsed > 0) {
+      await this.mileageService.refundMileage(userId, (order as any).mileageUsed, orderId);
+    }
+
+    return cancelled;
   }
 
   async deletePendingOrder(orderId: string, userId: string) {
