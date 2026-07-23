@@ -86,7 +86,9 @@ export default function CheckoutPage() {
       await tossPayments.requestPayment('카드', {
         amount: finalAmount,
         orderId: order.id,
-        orderName: `${cart.items[0].product.name} 외 ${cart.items.length - 1}건`,
+        orderName: cart.items.length === 1
+          ? cart.items[0].product.name
+          : `${cart.items[0].product.name} 외 ${cart.items.length - 1}건`,
         customerName: form.receiverName,
         successUrl: `${window.location.origin}/checkout/success`,
         failUrl: `${window.location.origin}/checkout/fail`,
