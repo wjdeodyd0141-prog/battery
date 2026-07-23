@@ -96,6 +96,9 @@ export default async function HomePage() {
       {/* 롤링 배너 */}
       <BannerSlider />
 
+      {/* 채널 & 매장 안내 */}
+      <StoreInfoSection />
+
       {/* 카테고리 */}
       {categories.length > 0 && (
         <section className="bg-gray-50 py-16 sm:py-20">
@@ -161,9 +164,6 @@ export default async function HomePage() {
           )}
         </div>
       </section>
-
-      {/* 채널 & 매장 안내 */}
-      <StoreInfoSection />
 
       {/* 문의게시판 */}
       <HomeInquirySection />
