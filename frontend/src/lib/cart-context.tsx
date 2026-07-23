@@ -30,15 +30,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 캐시된 사용자 정보가 있으면 선제 로딩 (쿠키 인증)
+  // 로그인 시 장바구니 로드, 로그아웃 시 초기화
   useEffect(() => {
-    const cached = typeof window !== 'undefined' ? localStorage.getItem('cachedUser') : null;
-    if (cached) refresh();
-  }, []);
-
-  // 로그아웃 시 장바구니 초기화
-  useEffect(() => {
-    if (!loading && !user) setCart(null);
+    if (loading) return;
+    if (user) refresh();
+    else setCart(null);
   }, [loading, user]);
 
   const addItem = async (productId: string, quantity = 1, selectedOptions?: SelectedOption[]) => {
