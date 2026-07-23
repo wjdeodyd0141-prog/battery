@@ -32,9 +32,7 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
       <div className="w-full max-w-sm">
         <div className="flex justify-center mb-8">
-          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center">
-            <Zap className="w-7 h-7 text-white fill-white" />
-          </div>
+          <img src="/logo.png" alt="파워뱅크 전시장" className="h-12 w-auto" />
         </div>
         <h1 className="text-xl font-bold text-white text-center mb-6">관리자 로그인</h1>
 

@@ -34,9 +34,7 @@ function GoogleCallbackInner() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="flex flex-col items-center gap-5">
-        <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center">
-          <Zap className="w-8 h-8 text-white fill-white" />
-        </div>
+        <img src="/logo.png" alt="파워뱅크 전시장" className="h-14 w-auto" />
         <div className="flex flex-col items-center gap-2">
           <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-gray-500">구글 로그인 처리 중...</p>

@@ -26,8 +26,8 @@ function LoginInner() {
       {/* 왼쪽 비주얼 (데스크톱) */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 items-center justify-center p-12">
         <div className="text-white max-w-sm">
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-6">
-            <Zap className="w-9 h-9 text-white fill-white" />
+          <div className="mb-6">
+            <img src="/logo.png" alt="파워뱅크 전시장" className="h-16 w-auto" />
           </div>
           <h2 className="text-3xl font-bold mb-4">다시 만나서 반가워요!</h2>
           <p className="text-blue-100 leading-relaxed text-lg">
@@ -49,11 +49,8 @@ function LoginInner() {
         <div className="w-full max-w-md">
           {/* 모바일 로고 */}
           <div className="lg:hidden flex justify-center mb-8">
-            <Link href="/" className="flex items-center gap-2 font-bold text-2xl text-blue-600">
-              <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white fill-white" />
-              </div>
-              파워뱅크 전시장
+            <Link href="/">
+              <img src="/logo.png" alt="파워뱅크 전시장" className="h-10 w-auto" />
             </Link>
           </div>
 
