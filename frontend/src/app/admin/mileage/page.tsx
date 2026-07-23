@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Coins, Plus, Minus } from 'lucide-react';
+import { Search, Coins, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +26,8 @@ export default function AdminMileagePage() {
   const [rateLoading, setRateLoading] = useState(false);
   const [users, setUsers] = useState<MileageUser[]>([]);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedUser, setSelectedUser] = useState<MileageUser | null>(null);
   const [grantAmount, setGrantAmount] = useState('');
   const [grantReason, setGrantReason] = useState('');
@@ -39,14 +41,24 @@ export default function AdminMileagePage() {
     }
   }, [user, loading]);
 
-  const loadUsers = (q?: string) => {
-    const path = q ? `/admin/mileage/users?search=${encodeURIComponent(q)}` : '/admin/mileage/users';
-    api.get<MileageUser[]>(path).then(setUsers).catch(() => {});
+  const loadUsers = (q?: string, p = 1) => {
+    const params = new URLSearchParams();
+    if (q) params.set('search', q);
+    params.set('page', String(p));
+    api.get<{ users: MileageUser[]; totalPages: number }>(`/admin/mileage/users?${params}`)
+      .then(r => { setUsers(r.users); setTotalPages(r.totalPages); })
+      .catch(() => {});
   };
 
   const handleSearch = (v: string) => {
     setSearch(v);
-    loadUsers(v);
+    setPage(1);
+    loadUsers(v, 1);
+  };
+
+  const goPage = (p: number) => {
+    setPage(p);
+    loadUsers(search, p);
   };
 
   const saveRate = async () => {
@@ -77,7 +89,7 @@ export default function AdminMileagePage() {
       setGrantAmount('');
       setGrantReason('');
       setSelectedUser(null);
-      loadUsers(search);
+      loadUsers(search, page);
     } catch (err: any) {
       toast.error(err.message);
     } finally { setGranting(false); }
@@ -130,7 +142,7 @@ export default function AdminMileagePage() {
         </div>
 
         {/* 회원 목록 */}
-        <div className="border border-gray-100 rounded-xl overflow-hidden mb-4 max-h-56 overflow-y-auto">
+        <div className="border border-gray-100 rounded-xl overflow-hidden mb-3">
           {users.length === 0 ? (
             <p className="text-center text-sm text-gray-400 py-8">회원이 없습니다.</p>
           ) : (
@@ -162,6 +174,37 @@ export default function AdminMileagePage() {
             </table>
           )}
         </div>
+
+        {/* 페이징 */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-1 mb-4">
+            <button
+              onClick={() => goPage(page - 1)}
+              disabled={page === 1}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+              <button
+                key={p}
+                onClick={() => goPage(p)}
+                className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                  p === page ? 'bg-emerald-600 text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              onClick={() => goPage(page + 1)}
+              disabled={page === totalPages}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* 지급/차감 입력 */}
         {selectedUser && (

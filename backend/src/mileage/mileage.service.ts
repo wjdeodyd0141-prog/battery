@@ -137,7 +137,7 @@ export class MileageService {
     return { success: true };
   }
 
-  async getAdminUserList(search?: string) {
+  async getAdminUserList(search?: string, page = 1, limit = 20) {
     const where: any = search ? {
       OR: [
         { username: { contains: search, mode: 'insensitive' } },
@@ -145,11 +145,17 @@ export class MileageService {
         { email: { contains: search, mode: 'insensitive' } },
       ],
     } : {};
-    return this.prisma.user.findMany({
-      where,
-      select: { id: true, username: true, name: true, email: true, mileageBalance: true },
-      orderBy: { mileageBalance: 'desc' },
-      take: 50,
-    });
+    const skip = (page - 1) * limit;
+    const [total, users] = await Promise.all([
+      this.prisma.user.count({ where }),
+      this.prisma.user.findMany({
+        where,
+        select: { id: true, username: true, name: true, email: true, mileageBalance: true },
+        orderBy: { mileageBalance: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+    return { users, total, page, totalPages: Math.ceil(total / limit) };
   }
 }

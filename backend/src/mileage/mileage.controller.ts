@@ -48,7 +48,10 @@ export class MileageController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Get('admin/mileage/users')
-  getUserList(@Query('search') search?: string) {
-    return this.mileageService.getAdminUserList(search);
+  getUserList(
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+  ) {
+    return this.mileageService.getAdminUserList(search, page ? +page : 1);
   }
 }
