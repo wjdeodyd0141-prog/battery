@@ -1,9 +1,21 @@
 /** @type {import('next').NextConfig} */
+const BACKEND_URL = 'https://api.powerbankmall.co.kr/api';
+
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
   env: {
-    NEXT_PUBLIC_API_URL: 'https://api.powerbankmall.co.kr/api',
+    NEXT_PUBLIC_API_URL: BACKEND_URL,
+  },
+  // 브라우저 → /backend-api/* → Next.js 서버 → Railway
+  // 쿠키가 프론트와 같은 도메인에서 처리되어 서드파티 쿠키 차단 문제 해결
+  async rewrites() {
+    return [
+      {
+        source: '/backend-api/:path*',
+        destination: `${BACKEND_URL}/:path*`,
+      },
+    ];
   },
   images: {
     remotePatterns: [

@@ -1,4 +1,11 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+// 프로덕션 클라이언트: /backend-api 프록시 경유 (크로스 오리진 쿠키 문제 해결)
+// SSR 또는 개발환경: 직접 API URL 사용
+const isBrowser = typeof window !== 'undefined';
+const isDev = process.env.NODE_ENV === 'development';
+const BASE_URL =
+  isBrowser && !isDev
+    ? '/backend-api'
+    : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api');
 
 // 동시에 여러 요청이 401을 받을 때, 첫 번째만 refresh하고 나머지는 큐에서 대기 후 재시도
 let isRefreshing = false;
