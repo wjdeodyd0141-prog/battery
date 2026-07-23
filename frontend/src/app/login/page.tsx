@@ -26,8 +26,9 @@ function LoginInner() {
       {/* 왼쪽 비주얼 (데스크톱) */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 items-center justify-center p-12">
         <div className="text-white max-w-sm">
-          <div className="mb-6">
-            <img src="/logo.png" alt="파워뱅크 전시장" className="h-16 w-auto" />
+          <div className="flex items-center gap-3 mb-6">
+            <img src="/logo.png" alt="파워뱅크 전시장" className="h-12 w-auto" />
+            <span className="text-2xl font-bold tracking-tight">파워뱅크 전시장</span>
           </div>
           <h2 className="text-3xl font-bold mb-4">다시 만나서 반가워요!</h2>
           <p className="text-blue-100 leading-relaxed text-lg">
