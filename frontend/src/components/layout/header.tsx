@@ -57,7 +57,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* 로고 */}
           <Link href="/" onClick={() => setMobileOpen(false)}>
-            <img src="/logo.png" alt="파워뱅크 전시장" className="h-9 w-auto" />
+            <img src="/logo.png" alt="파워뱅크 전시장" className="h-12 w-auto" />
           </Link>
 
           {/* 데스크톱 네비게이션 */}
