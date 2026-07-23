@@ -5,8 +5,9 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
-import { useRef, useState } from 'react';
-import { Bold, Italic, List, ListOrdered, ImageIcon, Heading2, Heading3, Minus, Palette } from 'lucide-react';
+import Youtube from '@tiptap/extension-youtube';
+import { useRef } from 'react';
+import { Bold, Italic, List, ListOrdered, ImageIcon, Heading2, Heading3, Minus, Palette, Youtube as YoutubeIcon } from 'lucide-react';
 import { uploadImage } from '@/lib/upload';
 import { toast } from 'sonner';
 
@@ -27,6 +28,7 @@ export default function RichTextEditor({ value, onChange }: Props) {
       Image.configure({ inline: false, allowBase64: false }),
       TextStyle,
       Color,
+      Youtube.configure({ width: 640, height: 360, nocookie: true }),
     ],
     content: value,
     onUpdate({ editor }) {
@@ -98,6 +100,14 @@ export default function RichTextEditor({ value, onChange }: Props) {
         </button>
         <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
           multiple className="hidden" onChange={e => handleImageUpload(e.target.files)} />
+        <button type="button"
+          onClick={() => {
+            const url = prompt('유튜브 URL을 입력하세요');
+            if (url) editor.chain().focus().setYoutubeVideo({ src: url }).run();
+          }}
+          className={btn(false)} title="유튜브 영상 삽입">
+          <YoutubeIcon className="w-4 h-4" />
+        </button>
         <div className="w-px h-5 bg-gray-200 mx-1" />
         {/* 색상 프리셋 */}
         {PRESET_COLORS.map(color => (
@@ -136,6 +146,8 @@ export default function RichTextEditor({ value, onChange }: Props) {
           content: attr(data-placeholder);
           float: left; color: #adb5bd; pointer-events: none; height: 0;
         }
+        .ProseMirror div[data-youtube-video] { margin: 12px 0; }
+        .ProseMirror div[data-youtube-video] iframe { max-width: 100%; border-radius: 8px; }
       `}</style>
     </div>
   );
