@@ -19,7 +19,7 @@ export default function AddToCartButton({ product }: Props) {
   const [loading, setLoading] = useState(false);
   const [selections, setSelections] = useState<Record<string, string>>({});
   const { addItem } = useCart();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
 
   const optionGroups = product.optionGroups ?? [];
@@ -52,7 +52,8 @@ export default function AddToCartButton({ product }: Props) {
       if (redirect) router.push('/cart');
     } catch (err: any) {
       if (err.message === 'Unauthorized' || err.message?.includes('인증')) {
-        toast.error('로그인이 필요합니다. 다시 로그인해주세요.');
+        toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
+        await logout();
         router.push('/login');
       } else {
         toast.error(err.message || '오류가 발생했습니다.');

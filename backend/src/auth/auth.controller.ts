@@ -13,10 +13,15 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 // VULN-04: OAuth CSRF state 저장 (in-memory, 5분 TTL)
 const oauthStates = new Map<string, number>();
 
+// NODE_ENV가 없을 때 FRONTEND_URL(https://)로 프로덕션 감지 — Railway 배포 환경 대응
+const IS_PROD =
+  process.env.NODE_ENV === 'production' ||
+  (!!process.env.FRONTEND_URL && process.env.FRONTEND_URL.startsWith('https://'));
+
 const COOKIE_OPTS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'lax') as 'none' | 'lax',
+  secure: IS_PROD,
+  sameSite: (IS_PROD ? 'none' : 'lax') as 'none' | 'lax',
   path: '/',
 };
 
@@ -30,8 +35,8 @@ export class AuthController {
   }
 
   private clearCookies(res: Response) {
-    res.clearCookie('accessToken', { path: '/' });
-    res.clearCookie('refreshToken', { path: '/' });
+    res.clearCookie('accessToken', COOKIE_OPTS);
+    res.clearCookie('refreshToken', COOKIE_OPTS);
   }
 
   @Throttle({ default: { ttl: 60000, limit: 5 } })
