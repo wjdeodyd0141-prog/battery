@@ -91,7 +91,7 @@ export default function BannerSlider() {
 
   return (
     <section
-      className={`relative w-full overflow-hidden bg-gray-900 select-none h-[180px] sm:h-[280px] lg:h-[420px] ${dragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+      className={`relative w-full overflow-hidden bg-gray-900 select-none h-[140px] sm:h-[200px] lg:h-[300px] ${dragging ? 'cursor-grabbing' : 'cursor-grab'}`}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
