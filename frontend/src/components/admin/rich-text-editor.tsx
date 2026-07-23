@@ -7,7 +7,7 @@ import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import Youtube from '@tiptap/extension-youtube';
 import { useRef } from 'react';
-import { Bold, Italic, List, ListOrdered, ImageIcon, Heading2, Heading3, Minus, Palette, Youtube as YoutubeIcon } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, ImageIcon, Heading2, Heading3, Minus, Palette, PlayCircle as YoutubeIcon } from 'lucide-react';
 import { uploadImage } from '@/lib/upload';
 import { toast } from 'sonner';
 

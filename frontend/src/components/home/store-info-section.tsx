@@ -1,6 +1,6 @@
 'use client';
 
-import { Youtube, BookOpen, MapPin, ExternalLink, Phone, Clock } from 'lucide-react';
+import { PlayCircle, BookOpen, MapPin, ExternalLink, Phone, Clock } from 'lucide-react';
 
 export default function StoreInfoSection() {
   return (
@@ -21,7 +21,7 @@ export default function StoreInfoSection() {
             className="group bg-white rounded-2xl border border-gray-200 p-6 flex flex-col items-center gap-4 hover:border-red-300 hover:shadow-lg transition-all duration-200 cursor-pointer"
           >
             <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center group-hover:bg-red-100 group-hover:scale-110 transition-all duration-200">
-              <Youtube className="w-8 h-8 text-red-500" />
+              <PlayCircle className="w-8 h-8 text-red-500" />
             </div>
             <div className="text-center">
               <p className="font-bold text-gray-900 text-base">유튜브 채널</p>
