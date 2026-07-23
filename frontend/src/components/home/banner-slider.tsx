@@ -117,6 +117,7 @@ export default function BannerSlider() {
               className="object-cover pointer-events-none"
               priority={idx === 0}
               sizes="100vw"
+              quality={90}
               draggable={false}
             />
             {(b.title || b.subtitle) && (
