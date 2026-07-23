@@ -49,8 +49,9 @@ function LoginInner() {
         <div className="w-full max-w-md">
           {/* 모바일 로고 */}
           <div className="lg:hidden flex justify-center mb-8">
-            <Link href="/">
-              <img src="/logo.png" alt="파워뱅크 전시장" className="h-10 w-auto" />
+            <Link href="/" className="flex items-center gap-2 font-bold text-2xl text-blue-600">
+              <img src="/logo.png" alt="파워뱅크 전시장" className="h-9 w-auto" />
+              파워뱅크 전시장
             </Link>
           </div>
 

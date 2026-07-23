@@ -28,8 +28,9 @@ export default async function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* 브랜드 소개 */}
           <div className="sm:col-span-2 lg:col-span-2">
-            <Link href="/" className="inline-flex mb-4">
+            <Link href="/" className="inline-flex items-center gap-2 font-bold text-xl text-white mb-4">
               <img src="/logo.png" alt="파워뱅크 전시장" className="h-9 w-auto" />
+              파워뱅크 전시장
             </Link>
             <p className="text-sm leading-relaxed max-w-xs">
               고품질 배터리 전문 쇼핑몰 파워뱅크 전시장입니다.<br />
