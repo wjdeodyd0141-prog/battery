@@ -15,7 +15,7 @@ export async function compressImage(file: File, maxWidth = 1200): Promise<Blob> 
       canvas.toBlob(
         (blob) => { if (blob) resolve(blob); else reject(new Error('이미지 압축에 실패했습니다.')); },
         'image/webp',
-        0.8
+        0.9
       );
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지를 로드할 수 없습니다.')); };
@@ -23,10 +23,10 @@ export async function compressImage(file: File, maxWidth = 1200): Promise<Blob> 
   });
 }
 
-export async function uploadImage(file: File, folder: string): Promise<string> {
+export async function uploadImage(file: File, folder: string, maxWidth = 1200): Promise<string> {
   if (file.size > MAX_FILE_SIZE) throw new Error('파일 크기가 5MB를 초과합니다.');
 
-  const compressed = await compressImage(file);
+  const compressed = await compressImage(file, maxWidth);
   // blob.type을 사용해 브라우저가 실제로 저장한 타입과 일치시킴
   // (WebP 미지원 브라우저는 PNG 등으로 폴백하므로 하드코딩 금지)
   const actualType = compressed.type || 'image/webp';

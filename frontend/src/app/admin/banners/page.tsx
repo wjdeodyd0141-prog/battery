@@ -43,7 +43,7 @@ export default function AdminBannersPage() {
     if (!files || files.length === 0) return;
     setUploading(true);
     try {
-      const url = await uploadImage(files[0], 'banners');
+      const url = await uploadImage(files[0], 'banners', 1920);
       setForm((f) => ({ ...f, imageUrl: url }));
       toast.success('이미지 업로드 완료');
     } catch (err: any) {
