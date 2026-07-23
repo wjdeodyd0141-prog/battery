@@ -1,6 +1,6 @@
 'use client';
 
-import { PlayCircle, BookOpen, MapPin, ExternalLink, Phone, Clock } from 'lucide-react';
+import { PlayCircle, BookOpen, MapPin, ExternalLink } from 'lucide-react';
 
 export default function StoreInfoSection() {
   return (
@@ -73,38 +73,6 @@ export default function StoreInfoSection() {
           </a>
         </div>
 
-        {/* 매장 정보 배너 */}
-        <div className="mt-6 bg-white rounded-2xl border border-gray-200 p-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
-              <Phone className="w-4 h-4 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-400">고객센터</p>
-              <p className="text-sm font-semibold text-gray-800">02-2668-3799</p>
-            </div>
-          </div>
-          <div className="hidden sm:block w-px h-10 bg-gray-100" />
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
-              <Clock className="w-4 h-4 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-400">운영 시간</p>
-              <p className="text-sm font-semibold text-gray-800">평일 09:00 ~ 18:00 (토·일·공휴일 휴무)</p>
-            </div>
-          </div>
-          <div className="hidden sm:block w-px h-10 bg-gray-100" />
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
-              <MapPin className="w-4 h-4 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-400">매장 주소</p>
-              <p className="text-sm font-semibold text-gray-800">서울 강서구 공항대로 195 힐스테이트에코동익 109호</p>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
