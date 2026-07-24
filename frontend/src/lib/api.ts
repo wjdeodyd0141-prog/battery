@@ -82,7 +82,7 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
       const isAuthPage = ['/login', '/register', '/admin/login', '/auth/'].some(
         (p) => window.location.pathname.startsWith(p),
       );
-      if (!isAuthPage && localStorage.getItem('cachedUser')) {
+      if (!isAuthPage && path !== '/auth/me' && localStorage.getItem('cachedUser')) {
         localStorage.removeItem('cachedUser');
         fetch(`${BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
         const dest = window.location.pathname.startsWith('/admin') ? '/admin/login' : '/login';
