@@ -67,16 +67,21 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
     const refreshed = await tryRefresh();
     if (refreshed) return request<T>(path, options, false);
 
-    // 리프레시도 실패 → 세션 완전 만료: 중앙 처리 (각 컴포넌트마다 처리 불필요)
+    // 리프레시도 실패 → 세션 만료
     if (isBrowser) {
       _memoryToken = null;
+      // 로그인·회원가입·auth 페이지에서는 리다이렉트하지 않음 (무한 루프 방지)
+      const isAuthPage = ['/login', '/register', '/admin/login', '/auth/'].some(
+        (p) => window.location.pathname.startsWith(p),
+      );
+      if (!isAuthPage && localStorage.getItem('cachedUser')) {
+        localStorage.removeItem('cachedUser');
+        fetch(`${BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+        const dest = window.location.pathname.startsWith('/admin') ? '/admin/login' : '/login';
+        window.location.replace(dest);
+        await new Promise<never>(() => {});
+      }
       localStorage.removeItem('cachedUser');
-      // 백엔드 토큰 무효화 (best-effort)
-      fetch(`${BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
-      const dest = window.location.pathname.startsWith('/admin') ? '/admin/login' : '/login';
-      window.location.replace(dest);
-      // 페이지 이탈 전까지 이 Promise를 펜딩 상태로 유지 (컴포넌트 catch 미실행)
-      await new Promise<never>(() => {});
     }
   }
 
