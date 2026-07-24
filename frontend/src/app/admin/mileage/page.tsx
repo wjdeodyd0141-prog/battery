@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Coins, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Coins, Plus, Minus, ChevronLeft, ChevronRight, History, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +19,16 @@ interface MileageUser {
   mileageBalance: number;
 }
 
+interface MileageHistoryItem {
+  id: string;
+  amount: number;
+  type: 'EARN' | 'USE' | 'ADMIN';
+  reason: string;
+  orderId: string | null;
+  createdAt: string;
+  products: string[];
+}
+
 export default function AdminMileagePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -28,10 +38,18 @@ export default function AdminMileagePage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
   const [selectedUser, setSelectedUser] = useState<MileageUser | null>(null);
+  const [activeTab, setActiveTab] = useState<'grant' | 'history'>('grant');
+
   const [grantAmount, setGrantAmount] = useState('');
   const [grantReason, setGrantReason] = useState('');
   const [granting, setGranting] = useState(false);
+
+  const [history, setHistory] = useState<MileageHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotalPages, setHistoryTotalPages] = useState(1);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'ADMIN')) { router.push('/'); return; }
@@ -50,6 +68,14 @@ export default function AdminMileagePage() {
       .catch(() => {});
   };
 
+  const loadHistory = (userId: string, p = 1) => {
+    setHistoryLoading(true);
+    api.get<{ history: MileageHistoryItem[]; totalPages: number }>(`/admin/mileage/users/${userId}/history?page=${p}`)
+      .then(r => { setHistory(r.history); setHistoryTotalPages(r.totalPages); })
+      .catch(() => {})
+      .finally(() => setHistoryLoading(false));
+  };
+
   const handleSearch = (v: string) => {
     setSearch(v);
     setPage(1);
@@ -59,6 +85,32 @@ export default function AdminMileagePage() {
   const goPage = (p: number) => {
     setPage(p);
     loadUsers(search, p);
+  };
+
+  const handleSelectUser = (u: MileageUser) => {
+    if (selectedUser?.id === u.id) {
+      setSelectedUser(null);
+      return;
+    }
+    setSelectedUser(u);
+    setActiveTab('grant');
+    setGrantAmount('');
+    setGrantReason('');
+    setHistory([]);
+    setHistoryPage(1);
+  };
+
+  const handleTabChange = (tab: 'grant' | 'history') => {
+    setActiveTab(tab);
+    if (tab === 'history' && selectedUser && history.length === 0) {
+      loadHistory(selectedUser.id, 1);
+    }
+  };
+
+  const goHistoryPage = (p: number) => {
+    if (!selectedUser) return;
+    setHistoryPage(p);
+    loadHistory(selectedUser.id, p);
   };
 
   const saveRate = async () => {
@@ -93,6 +145,15 @@ export default function AdminMileagePage() {
     } catch (err: any) {
       toast.error(err.message);
     } finally { setGranting(false); }
+  };
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+  const typeLabel = (type: string) => {
+    if (type === 'EARN') return { text: '적립', cls: 'text-emerald-600 bg-emerald-50' };
+    if (type === 'USE') return { text: '사용', cls: 'text-red-500 bg-red-50' };
+    return { text: '관리자', cls: 'text-blue-600 bg-blue-50' };
   };
 
   if (loading || !user) return null;
@@ -154,80 +215,175 @@ export default function AdminMileagePage() {
                   <th className="w-16"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-100">
                 {users.map(u => (
-                  <tr key={u.id} className={`hover:bg-gray-50 cursor-pointer ${selectedUser?.id === u.id ? 'bg-emerald-50' : ''}`}
-                    onClick={() => setSelectedUser(u)}>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{u.name || u.username}</p>
-                      <p className="text-xs text-gray-400">{u.username}</p>
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-emerald-600">
-                      {u.mileageBalance.toLocaleString()}원
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {selectedUser?.id === u.id && <span className="text-xs text-emerald-600 font-medium">선택됨</span>}
-                    </td>
-                  </tr>
+                  <>
+                    <tr
+                      key={u.id}
+                      className={`hover:bg-gray-50 cursor-pointer transition-colors ${selectedUser?.id === u.id ? 'bg-emerald-50' : ''}`}
+                      onClick={() => handleSelectUser(u)}
+                    >
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900">{u.name || u.username}</p>
+                        <p className="text-xs text-gray-400">{u.username}</p>
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-emerald-600">
+                        {u.mileageBalance.toLocaleString()}원
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {selectedUser?.id === u.id && <span className="text-xs text-emerald-600 font-medium">선택됨</span>}
+                      </td>
+                    </tr>
+
+                    {/* 인라인 확장 패널 */}
+                    {selectedUser?.id === u.id && (
+                      <tr key={`${u.id}-panel`}>
+                        <td colSpan={3} className="px-4 py-4 bg-emerald-50 border-t border-emerald-100">
+                          {/* 탭 */}
+                          <div className="flex gap-1 mb-3">
+                            <button
+                              type="button"
+                              onClick={() => handleTabChange('grant')}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                activeTab === 'grant' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                              }`}
+                            >
+                              <CreditCard className="w-3.5 h-3.5" /> 지급 / 차감
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleTabChange('history')}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                activeTab === 'history' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                              }`}
+                            >
+                              <History className="w-3.5 h-3.5" /> 이력
+                            </button>
+                          </div>
+
+                          {/* 지급/차감 탭 */}
+                          {activeTab === 'grant' && (
+                            <div className="space-y-2.5">
+                              <p className="text-xs font-semibold text-emerald-800">
+                                {u.name || u.username} ({u.username}) — 현재 {u.mileageBalance.toLocaleString()}원
+                              </p>
+                              <div>
+                                <Label className="text-xs text-gray-600">금액 (원)</Label>
+                                <Input
+                                  type="number" min={1} value={grantAmount}
+                                  onChange={e => setGrantAmount(e.target.value)}
+                                  placeholder="예) 5000" className="mt-1 bg-white h-8 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-600">사유</Label>
+                                <Input
+                                  value={grantReason}
+                                  onChange={e => setGrantReason(e.target.value)}
+                                  placeholder="예) 이벤트 당첨" className="mt-1 bg-white h-8 text-sm"
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <Button onClick={() => handleGrant(false)} disabled={granting} size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                                  <Plus className="w-3.5 h-3.5 mr-1" /> 지급
+                                </Button>
+                                <Button onClick={() => handleGrant(true)} disabled={granting} size="sm" variant="outline" className="flex-1 text-red-500 border-red-200 hover:bg-red-50">
+                                  <Minus className="w-3.5 h-3.5 mr-1" /> 차감
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 이력 탭 */}
+                          {activeTab === 'history' && (
+                            <div>
+                              {historyLoading ? (
+                                <div className="flex justify-center py-6">
+                                  <div className="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                                </div>
+                              ) : history.length === 0 ? (
+                                <p className="text-center text-xs text-gray-400 py-6">마일리지 이력이 없습니다.</p>
+                              ) : (
+                                <div className="space-y-1.5">
+                                  {history.map(h => {
+                                    const label = typeLabel(h.type);
+                                    return (
+                                      <div key={h.id} className="bg-white rounded-lg px-3 py-2.5 flex items-start gap-3">
+                                        <span className={`shrink-0 text-[11px] font-medium px-1.5 py-0.5 rounded-full ${label.cls}`}>
+                                          {label.text}
+                                        </span>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs text-gray-700">{h.reason}</p>
+                                          {h.products.length > 0 && (
+                                            <p className="text-[11px] text-gray-400 mt-0.5 truncate">
+                                              {h.products.join(', ')}
+                                            </p>
+                                          )}
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                          <p className={`text-sm font-semibold ${h.amount > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                            {h.amount > 0 ? '+' : ''}{h.amount.toLocaleString()}원
+                                          </p>
+                                          <p className="text-[11px] text-gray-400">{formatDate(h.createdAt)}</p>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+
+                                  {/* 이력 페이징 */}
+                                  {historyTotalPages > 1 && (
+                                    <div className="flex items-center justify-center gap-1 pt-2">
+                                      <button onClick={() => goHistoryPage(historyPage - 1)} disabled={historyPage === 1}
+                                        className="p-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-30">
+                                        <ChevronLeft className="w-3.5 h-3.5" />
+                                      </button>
+                                      {Array.from({ length: historyTotalPages }, (_, i) => i + 1).map(p => (
+                                        <button key={p} onClick={() => goHistoryPage(p)}
+                                          className={`w-6 h-6 rounded text-xs font-medium transition-colors ${
+                                            p === historyPage ? 'bg-emerald-600 text-white' : 'text-gray-600 hover:bg-gray-100'
+                                          }`}>
+                                          {p}
+                                        </button>
+                                      ))}
+                                      <button onClick={() => goHistoryPage(historyPage + 1)} disabled={historyPage === historyTotalPages}
+                                        className="p-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-30">
+                                        <ChevronRight className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
           )}
         </div>
 
-        {/* 페이징 */}
+        {/* 회원 목록 페이징 */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-1 mb-4">
-            <button
-              onClick={() => goPage(page - 1)}
-              disabled={page === 1}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-            >
+          <div className="flex items-center justify-center gap-1">
+            <button onClick={() => goPage(page - 1)} disabled={page === 1}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed">
               <ChevronLeft className="w-4 h-4" />
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button
-                key={p}
-                onClick={() => goPage(p)}
+              <button key={p} onClick={() => goPage(p)}
                 className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
                   p === page ? 'bg-emerald-600 text-white' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
+                }`}>
                 {p}
               </button>
             ))}
-            <button
-              onClick={() => goPage(page + 1)}
-              disabled={page === totalPages}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-            >
+            <button onClick={() => goPage(page + 1)} disabled={page === totalPages}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed">
               <ChevronRight className="w-4 h-4" />
             </button>
-          </div>
-        )}
-
-        {/* 지급/차감 입력 */}
-        {selectedUser && (
-          <div className="bg-emerald-50 rounded-xl p-4 space-y-3">
-            <p className="text-sm font-semibold text-emerald-800">
-              {selectedUser.name || selectedUser.username} ({selectedUser.username}) — 현재 {selectedUser.mileageBalance.toLocaleString()}원
-            </p>
-            <div>
-              <Label className="text-xs text-gray-600">금액 (원)</Label>
-              <Input type="number" min={1} value={grantAmount} onChange={e => setGrantAmount(e.target.value)} placeholder="예) 5000" className="mt-1 bg-white" />
-            </div>
-            <div>
-              <Label className="text-xs text-gray-600">사유</Label>
-              <Input value={grantReason} onChange={e => setGrantReason(e.target.value)} placeholder="예) 이벤트 당첨" className="mt-1 bg-white" />
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={() => handleGrant(false)} disabled={granting} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                <Plus className="w-4 h-4 mr-1" /> 지급
-              </Button>
-              <Button onClick={() => handleGrant(true)} disabled={granting} variant="outline" className="flex-1 text-red-500 border-red-200 hover:bg-red-50">
-                <Minus className="w-4 h-4 mr-1" /> 차감
-              </Button>
-            </div>
           </div>
         )}
       </div>

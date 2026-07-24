@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Query, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Query, Param, Request, UseGuards } from '@nestjs/common';
 import { MileageService } from './mileage.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -43,6 +43,16 @@ export class MileageController {
   @Post('admin/mileage/grant')
   grant(@Body() body: { userId: string; amount: number; reason: string }) {
     return this.mileageService.adminGrant(body.userId, body.amount, body.reason);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Get('admin/mileage/users/:userId/history')
+  getUserHistory(
+    @Param('userId') userId: string,
+    @Query('page') page?: string,
+  ) {
+    return this.mileageService.getAdminUserHistory(userId, page ? +page : 1);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

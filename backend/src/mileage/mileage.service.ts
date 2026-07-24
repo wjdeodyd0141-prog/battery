@@ -151,6 +151,35 @@ export class MileageService {
     return { success: true };
   }
 
+  async getAdminUserHistory(userId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [total, history] = await Promise.all([
+      this.prisma.mileageHistory.count({ where: { userId } }),
+      this.prisma.mileageHistory.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    const orderIds = [...new Set(history.filter(h => h.orderId).map(h => h.orderId as string))];
+    const orders = orderIds.length > 0
+      ? await this.prisma.order.findMany({
+          where: { id: { in: orderIds } },
+          include: { items: { include: { product: { select: { name: true } } } } },
+        })
+      : [];
+    const orderMap = new Map(orders.map(o => [o.id, o]));
+
+    const enriched = history.map(h => ({
+      ...h,
+      products: h.orderId ? (orderMap.get(h.orderId)?.items.map(i => i.product.name) ?? []) : [],
+    }));
+
+    return { history: enriched, total, page, totalPages: Math.ceil(total / limit) };
+  }
+
   async getAdminUserList(search?: string, page = 1, limit = 20) {
     const where: any = search ? {
       OR: [
