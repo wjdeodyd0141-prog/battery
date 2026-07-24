@@ -18,8 +18,8 @@ const MAX_IMAGES = 8;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 // ── 이미지 업로드 그리드 ─────────────────────────────────────
-function ImageUploadGrid({ urls, folder, onChange, label, hint }: {
-  urls: string[]; folder: string; onChange: (urls: string[]) => void; label: string; hint?: string;
+function ImageUploadGrid({ urls, folder, onChange, onUploadingChange, label, hint }: {
+  urls: string[]; folder: string; onChange: (urls: string[]) => void; onUploadingChange?: (v: boolean) => void; label: string; hint?: string;
 }) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -33,6 +33,7 @@ function ImageUploadGrid({ urls, folder, onChange, label, hint }: {
       if (f.size > MAX_FILE_SIZE) { toast.error(`${f.name}: 파일 크기가 5MB를 초과합니다.`); return; }
     }
     setUploading(true);
+    onUploadingChange?.(true);
     try {
       const newUrls: string[] = [];
       for (const f of selected) newUrls.push(await uploadImage(f, folder));
@@ -42,6 +43,7 @@ function ImageUploadGrid({ urls, folder, onChange, label, hint }: {
       toast.error(err.message || '업로드 실패');
     } finally {
       setUploading(false);
+      onUploadingChange?.(false);
       if (inputRef.current) inputRef.current.value = '';
     }
   };
@@ -324,6 +326,7 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
   const [specs, setSpecs] = useState<Record<string, string>>({});
   const [mileageRate, setMileageRate] = useState('');
   const [saving, setSaving] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
 
   useEffect(() => {
     api.get<Category[]>('/categories').then(setCategories).catch(() => {});
@@ -482,15 +485,15 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
                 </div>
               </div>
 
-              <ImageUploadGrid urls={imageUrls} folder="products" onChange={setImageUrls} label="메인 이미지" hint="첫 번째가 대표 이미지" />
+              <ImageUploadGrid urls={imageUrls} folder="products" onChange={setImageUrls} onUploadingChange={setImageUploading} label="메인 이미지" hint="첫 번째가 대표 이미지" />
               <div>
                 <Label className="mb-1.5 block">상세 내용 <span className="text-xs text-gray-400 font-normal">이미지·텍스트 자유롭게 편집</span></Label>
                 <RichTextEditor value={detailContent} onChange={setDetailContent} />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="outline" onClick={onClose}>취소</Button>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={saving}>
-                  {saving ? '저장 중...' : product ? '수정' : '등록'}
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={saving || imageUploading}>
+                  {saving ? '저장 중...' : imageUploading ? '이미지 업로드 중...' : product ? '수정' : '등록'}
                 </Button>
               </div>
             </form>
