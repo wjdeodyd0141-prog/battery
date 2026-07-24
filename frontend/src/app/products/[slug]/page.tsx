@@ -126,8 +126,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
             {/* 배송 안내 */}
             <div className="text-xs text-gray-400 space-y-1">
-              <p>✓ <span className="text-gray-600">3만원 이상 무료배송</span></p>
-              <p>✓ <span className="text-gray-600">오후 2시 이전 주문 시 당일 발송</span></p>
+              <p>✓ <span className="text-gray-600">전 제품 무료배송</span></p>
+              <p>✓ <span className="text-gray-600">오후 3시 이전 주문 시 당일 발송</span></p>
             </div>
 
             <AddToCartButton product={product} />

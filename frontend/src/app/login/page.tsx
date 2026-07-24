@@ -35,7 +35,7 @@ function LoginInner() {
             파워뱅크 전시장에서 최고 품질의 배터리를 지금 바로 만나보세요.
           </p>
           <div className="mt-10 space-y-3 text-sm text-blue-200">
-            {['3만원 이상 무료 배송', '정품 인증 100% 보장', '당일 발송 (오후 2시 전 주문)'].map((t) => (
+            {['전 제품 무료배송', '정품 인증 100% 보장', '당일 발송 (오후 3시 전 주문)'].map((t) => (
               <div key={t} className="flex items-center gap-3">
                 <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">✓</div>
                 {t}
