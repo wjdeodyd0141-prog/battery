@@ -14,6 +14,14 @@ export function setMemoryToken(token: string | null) {
   _memoryToken = token;
 }
 
+export function getApiBaseUrl() {
+  return BASE_URL;
+}
+
+export function getMemoryToken() {
+  return _memoryToken;
+}
+
 // 동시에 여러 요청이 401을 받을 때, 첫 번째만 refresh하고 나머지는 큐에서 대기 후 재시도
 let isRefreshing = false;
 let refreshQueue: Array<(success: boolean) => void> = [];

@@ -1,5 +1,6 @@
+import { getApiBaseUrl, getMemoryToken } from './api';
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const BASE_URL = () => process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export async function compressImage(file: File, maxWidth = 1200): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -27,8 +28,6 @@ export async function uploadImage(file: File, folder: string, maxWidth = 1200): 
   if (file.size > MAX_FILE_SIZE) throw new Error('파일 크기가 5MB를 초과합니다.');
 
   const compressed = await compressImage(file, maxWidth);
-  // blob.type을 사용해 브라우저가 실제로 저장한 타입과 일치시킴
-  // (WebP 미지원 브라우저는 PNG 등으로 폴백하므로 하드코딩 금지)
   const actualType = compressed.type || 'image/webp';
   const ext = actualType.split('/')[1].replace('jpeg', 'jpg');
   const formData = new FormData();
@@ -37,11 +36,14 @@ export async function uploadImage(file: File, folder: string, maxWidth = 1200): 
 
   const endpoint = folder === 'reviews' ? '/upload/image/review' : '/upload/image';
 
-  // M-4: httpOnly 쿠키 인증 — Authorization 헤더 불필요
-  const res = await fetch(`${BASE_URL()}${endpoint}`, {
+  const token = getMemoryToken();
+  const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+  const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
     method: 'POST',
     body: formData,
     credentials: 'include',
+    headers,
   });
 
   if (!res.ok) {
