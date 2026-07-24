@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
-import { api } from './api';
+import { api, setMemoryToken } from './api';
 import { User } from './types';
 
 const USER_CACHE_KEY = 'cachedUser';
@@ -65,15 +65,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    const res = await api.post<{ user: User }>('/auth/login', { username, password });
-    // M-4: 토큰은 서버가 httpOnly 쿠키로 설정 — 여기선 user 정보만 캐시
+    const res = await api.post<{ user: User; accessToken: string }>('/auth/login', { username, password });
+    setMemoryToken(res.accessToken);
     localStorage.setItem(USER_CACHE_KEY, JSON.stringify(res.user));
     setUser(res.user);
   };
 
   // 카카오/구글 로그인 후 호출 (쿠키는 이미 설정됨)
-  const loginWithToken = (_token: string, userData: User) => {
+  const loginWithToken = (token: string, userData: User) => {
     loginVersionRef.current += 1; // me 요청의 catch가 사용자를 덮어쓰지 못하도록 버전 증가
+    if (token) setMemoryToken(token);
     localStorage.setItem(USER_CACHE_KEY, JSON.stringify(userData));
     setUser(userData);
   };
@@ -84,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await api.post('/auth/logout', {}).catch(() => {});
+    setMemoryToken(null);
     localStorage.removeItem(USER_CACHE_KEY);
     setUser(null);
   };

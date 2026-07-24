@@ -21,9 +21,9 @@ function GoogleCallbackInner() {
       return;
     }
 
-    api.get<{ user: User }>(`/auth/oauth/exchange?code=${code}`)
-      .then(({ user }) => {
-        loginWithToken('', user);
+    api.get<{ user: User; accessToken: string }>(`/auth/oauth/exchange?code=${code}`)
+      .then(({ user, accessToken }) => {
+        loginWithToken(accessToken, user);
         router.replace('/');
       })
       .catch(() => {

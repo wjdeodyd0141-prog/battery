@@ -23,9 +23,9 @@ function KakaoCallbackInner() {
     }
 
     // M-4: exchange 응답에서 user 수신, 토큰은 httpOnly 쿠키로 자동 설정됨
-    api.get<{ user: User }>(`/auth/kakao/exchange?code=${code}`)
-      .then(({ user }) => {
-        loginWithToken('', user);
+    api.get<{ user: User; accessToken: string }>(`/auth/kakao/exchange?code=${code}`)
+      .then(({ user, accessToken }) => {
+        loginWithToken(accessToken, user);
         router.replace('/');
       })
       .catch(() => {

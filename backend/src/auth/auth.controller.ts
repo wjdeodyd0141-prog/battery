@@ -53,7 +53,8 @@ export class AuthController {
   ) {
     const result = await this.authService.login(dto);
     this.setCookies(res, result.accessToken, result.refreshToken);
-    return { user: result.user };
+    // accessToken을 응답 바디에도 포함 — 프론트에서 메모리 저장 후 Bearer 헤더로 전송
+    return { user: result.user, accessToken: result.accessToken };
   }
 
   // M-4: 쿠키에서 refresh token 읽어 새 쌍 발급
@@ -71,7 +72,7 @@ export class AuthController {
     }
     const result = await this.authService.refreshAccessToken(refreshToken);
     this.setCookies(res, result.accessToken, result.refreshToken);
-    return { ok: true };
+    return { ok: true, accessToken: result.accessToken };
   }
 
   // 로그아웃: 쿠키 제거 + DB에서 토큰 삭제
@@ -172,7 +173,7 @@ export class AuthController {
   ) {
     const result = await this.authService.exchangeOAuthCodeFull(code);
     this.setCookies(res, result.accessToken, result.refreshToken);
-    return { user: result.user };
+    return { user: result.user, accessToken: result.accessToken };
   }
 
   // 카카오·구글 공용 OAuth 코드 교환 엔드포인트
@@ -184,6 +185,6 @@ export class AuthController {
   ) {
     const result = await this.authService.exchangeOAuthCodeFull(code);
     this.setCookies(res, result.accessToken, result.refreshToken);
-    return { user: result.user };
+    return { user: result.user, accessToken: result.accessToken };
   }
 }

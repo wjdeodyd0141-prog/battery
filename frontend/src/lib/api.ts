@@ -7,6 +7,13 @@ const BASE_URL =
     ? '/backend-api'
     : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api');
 
+// Access Token 메모리 저장 — httpOnly 쿠키가 크로스 오리진에서 막혀도 Bearer 헤더로 인증
+let _memoryToken: string | null = null;
+
+export function setMemoryToken(token: string | null) {
+  _memoryToken = token;
+}
+
 // 동시에 여러 요청이 401을 받을 때, 첫 번째만 refresh하고 나머지는 큐에서 대기 후 재시도
 let isRefreshing = false;
 let refreshQueue: Array<(success: boolean) => void> = [];
@@ -24,6 +31,10 @@ async function tryRefresh(): Promise<boolean> {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
     });
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (data.accessToken) _memoryToken = data.accessToken;
+    }
     const success = res.ok;
     refreshQueue.forEach((cb) => cb(success));
     refreshQueue = [];
@@ -41,6 +52,7 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
+    ...(_memoryToken ? { Authorization: `Bearer ${_memoryToken}` } : {}),
   };
 
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -57,6 +69,7 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
 
     // 리프레시도 실패 → 세션 완전 만료: 중앙 처리 (각 컴포넌트마다 처리 불필요)
     if (isBrowser) {
+      _memoryToken = null;
       localStorage.removeItem('cachedUser');
       // 백엔드 토큰 무효화 (best-effort)
       fetch(`${BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
