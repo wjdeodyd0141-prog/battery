@@ -12,6 +12,26 @@ import BannerSlider from '@/components/home/banner-slider';
 import PopupManager from '@/components/home/popup-manager';
 import StoreInfoSection from '@/components/home/store-info-section';
 
+interface HeroSettings {
+  badge: string; title: string; titleHighlight: string; subtitle: string; imageUrl: string;
+}
+
+const HERO_DEFAULTS: HeroSettings = {
+  badge: '⚡ 국내 최대 배터리 전문 쇼핑몰',
+  title: '당신의 기기에 맞는',
+  titleHighlight: '완벽한 배터리',
+  subtitle: '리튬, 알카라인, 충전용 배터리까지 — 국내외 최고 브랜드 제품을 합리적인 가격으로 만나보세요.',
+  imageUrl: '',
+};
+
+async function getHeroSettings(): Promise<HeroSettings> {
+  try {
+    return await api.get<HeroSettings>('/site-settings/hero');
+  } catch {
+    return HERO_DEFAULTS;
+  }
+}
+
 async function getFeaturedProducts(): Promise<Product[]> {
   try {
     return await api.get<Product[]>('/products/featured');
@@ -43,32 +63,46 @@ const FEATURES = [
 ];
 
 export default async function HomePage() {
-  const [products, categories] = await Promise.all([getFeaturedProducts(), getCategories()]);
+  const [products, categories, hero] = await Promise.all([getFeaturedProducts(), getCategories(), getHeroSettings()]);
 
   return (
     <div className="overflow-x-hidden">
       <PopupManager />
       {/* 히어로 섹션 */}
-      <section className="relative bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 text-white overflow-hidden">
-        {/* 배경 장식 */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full" />
-          <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-white/5 rounded-full translate-y-1/2" />
-          <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-indigo-500/20 rounded-full" />
-        </div>
+      <section
+        className="relative text-white overflow-hidden"
+        style={hero.imageUrl ? { backgroundImage: `url(${hero.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+      >
+        {/* 배경: 이미지 없으면 그라디언트, 있으면 어두운 오버레이 */}
+        {hero.imageUrl
+          ? <div className="absolute inset-0 bg-black/50" />
+          : (
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700">
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full" />
+                <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-white/5 rounded-full translate-y-1/2" />
+                <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-indigo-500/20 rounded-full" />
+              </div>
+            </div>
+          )
+        }
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
           <div className="max-w-3xl">
-            <Badge className="mb-6 inline-flex bg-white/15 text-white border-white/25 hover:bg-white/15 text-sm px-4 py-1.5 rounded-full backdrop-blur-sm">
-              ⚡ 국내 최대 배터리 전문 쇼핑몰
-            </Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-[1.1] tracking-tight">
-              당신의 기기에 맞는<br />
-              <span className="text-blue-200">완벽한 배터리</span>
+            {hero.badge && (
+              <Badge className="mb-5 inline-flex bg-white/15 text-white border-white/25 hover:bg-white/15 text-sm px-4 py-1.5 rounded-full backdrop-blur-sm">
+                {hero.badge}
+              </Badge>
+            )}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-5 leading-[1.1] tracking-tight">
+              {hero.title}<br />
+              <span className={hero.imageUrl ? 'text-white/80' : 'text-blue-200'}>{hero.titleHighlight}</span>
             </h1>
-            <p className="text-lg sm:text-xl text-blue-100/90 max-w-xl leading-relaxed">
-              리튬, 알카라인, 충전용 배터리까지 — 국내외 최고 브랜드 제품을 합리적인 가격으로 만나보세요.
-            </p>
+            {hero.subtitle && (
+              <p className="text-lg sm:text-xl text-white/80 max-w-xl leading-relaxed">
+                {hero.subtitle}
+              </p>
+            )}
           </div>
         </div>
       </section>

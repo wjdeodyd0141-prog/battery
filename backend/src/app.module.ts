@@ -19,6 +19,7 @@ import { PopupsModule } from './popups/popups.module';
 import { FaqsModule } from './faqs/faqs.module';
 import { MileageModule } from './mileage/mileage.module';
 import { CouponModule } from './coupon/coupon.module';
+import { SiteSettingsModule } from './site-settings/site-settings.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { CouponModule } from './coupon/coupon.module';
     FaqsModule,
     MileageModule,
     CouponModule,
+    SiteSettingsModule,
   ],
   providers: [
     // 모든 라우트에 Rate Limit 적용
