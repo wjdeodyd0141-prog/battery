@@ -7,7 +7,7 @@ import { Package, Tag, Users, ShoppingBag, MessageSquare, ImagePlay, Layers, Che
 import { useAuth } from '@/lib/auth';
 
 const menus = [
-  { href: '/admin/hero', icon: LayoutTemplate, title: '히어로 관리', desc: '홈 상단 배경 이미지 및 텍스트 설정' },
+  { href: '/admin/hero', icon: LayoutTemplate, title: '상단이미지 관리', desc: '홈 상단 배경 이미지 및 텍스트 설정' },
   { href: '/admin/banners', icon: ImagePlay, title: '배너 관리', desc: '메인 롤링 배너 등록/수정/삭제' },
   { href: '/admin/popups', icon: Layers, title: '팝업 관리', desc: '메인 화면 팝업 등록/수정/삭제' },
   { href: '/admin/products', icon: Package, title: '상품 관리', desc: '배터리 상품 등록/수정/삭제' },

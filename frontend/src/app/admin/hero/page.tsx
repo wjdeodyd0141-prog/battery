@@ -79,7 +79,7 @@ export default function AdminHeroPage() {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="mb-6">
         <Link href="/admin" className="text-sm text-gray-400 hover:text-gray-600">관리자 홈</Link>
-        <h1 className="text-2xl font-bold text-gray-900 mt-1">메인 히어로 관리</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mt-1">상단이미지 관리</h1>
         <p className="text-sm text-gray-400 mt-1">홈 화면 상단 섹션의 배경 이미지와 텍스트를 설정합니다.</p>
       </div>
 
