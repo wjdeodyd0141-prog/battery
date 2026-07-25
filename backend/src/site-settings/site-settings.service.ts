@@ -7,6 +7,8 @@ export interface HeroSettings {
   titleHighlight: string;
   subtitle: string;
   imageUrl: string;
+  imagePosition: string;
+  mobileImageUrl: string;
 }
 
 const DEFAULTS: HeroSettings = {
@@ -15,6 +17,8 @@ const DEFAULTS: HeroSettings = {
   titleHighlight: '완벽한 배터리',
   subtitle: '리튬, 알카라인, 충전용 배터리까지 — 국내외 최고 브랜드 제품을 합리적인 가격으로 만나보세요.',
   imageUrl: '',
+  imagePosition: 'center center',
+  mobileImageUrl: '',
 };
 
 const KEY_MAP: Record<keyof HeroSettings, string> = {
@@ -23,6 +27,8 @@ const KEY_MAP: Record<keyof HeroSettings, string> = {
   titleHighlight: 'hero_title_highlight',
   subtitle: 'hero_subtitle',
   imageUrl: 'hero_image_url',
+  imagePosition: 'hero_image_position',
+  mobileImageUrl: 'hero_mobile_image_url',
 };
 
 @Injectable()
@@ -40,6 +46,8 @@ export class SiteSettingsService {
       titleHighlight: map[KEY_MAP.titleHighlight] ?? DEFAULTS.titleHighlight,
       subtitle: map[KEY_MAP.subtitle] ?? DEFAULTS.subtitle,
       imageUrl: map[KEY_MAP.imageUrl] ?? DEFAULTS.imageUrl,
+      imagePosition: map[KEY_MAP.imagePosition] ?? DEFAULTS.imagePosition,
+      mobileImageUrl: map[KEY_MAP.mobileImageUrl] ?? DEFAULTS.mobileImageUrl,
     };
   }
 

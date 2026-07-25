@@ -13,7 +13,8 @@ import PopupManager from '@/components/home/popup-manager';
 import StoreInfoSection from '@/components/home/store-info-section';
 
 interface HeroSettings {
-  badge: string; title: string; titleHighlight: string; subtitle: string; imageUrl: string;
+  badge: string; title: string; titleHighlight: string; subtitle: string;
+  imageUrl: string; imagePosition: string; mobileImageUrl: string;
 }
 
 const HERO_DEFAULTS: HeroSettings = {
@@ -22,6 +23,8 @@ const HERO_DEFAULTS: HeroSettings = {
   titleHighlight: '완벽한 배터리',
   subtitle: '리튬, 알카라인, 충전용 배터리까지 — 국내외 최고 브랜드 제품을 합리적인 가격으로 만나보세요.',
   imageUrl: '',
+  imagePosition: 'center center',
+  mobileImageUrl: '',
 };
 
 async function getHeroSettings(): Promise<HeroSettings> {
@@ -69,23 +72,39 @@ export default async function HomePage() {
     <div className="overflow-x-hidden">
       <PopupManager />
       {/* 히어로 섹션 */}
-      <section
-        className="relative text-white overflow-hidden"
-        style={hero.imageUrl ? { backgroundImage: `url(${hero.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
-      >
-        {/* 배경: 이미지 없으면 그라디언트, 있으면 어두운 오버레이 */}
-        {hero.imageUrl
-          ? <div className="absolute inset-0 bg-black/50" />
-          : (
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700">
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full" />
-                <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-white/5 rounded-full translate-y-1/2" />
-                <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-indigo-500/20 rounded-full" />
-              </div>
+      <section className="relative text-white overflow-hidden">
+        {/* 배경: 이미지 없으면 그라디언트, 있으면 <picture> + 오버레이 */}
+        {hero.imageUrl ? (
+          <>
+            <picture>
+              {/* 모바일 전용 이미지 (업로드된 경우) */}
+              {hero.mobileImageUrl && (
+                <source media="(max-width: 639px)" srcSet={hero.mobileImageUrl} />
+              )}
+              <img
+                src={hero.imageUrl}
+                alt=""
+                className={[
+                  'absolute inset-0 w-full h-full',
+                  /* 모바일: 전용 이미지 있으면 cover, 없으면 contain (짤림 방지) */
+                  hero.mobileImageUrl
+                    ? 'object-cover'
+                    : 'object-contain sm:object-cover bg-black',
+                ].join(' ')}
+                style={{ objectPosition: hero.imagePosition || 'center center' }}
+              />
+            </picture>
+            <div className="absolute inset-0 bg-black/50" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full" />
+              <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-white/5 rounded-full translate-y-1/2" />
+              <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-indigo-500/20 rounded-full" />
             </div>
-          )
-        }
+          </div>
+        )}
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
           <div className="max-w-3xl">
