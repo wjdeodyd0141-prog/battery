@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Express } from 'express';
 
 // VULN-08: 허용된 업로드 폴더 목록
-const ALLOWED_FOLDERS = new Set(['products', 'products/detail', 'reviews', 'banners', 'categories', 'popups']);
+const ALLOWED_FOLDERS = new Set(['products', 'products/detail', 'reviews', 'banners', 'categories', 'popups', 'hero']);
 
 // VULN-07: 매직 바이트로 실제 이미지 타입 검증
 function validateMagicBytes(buffer: Buffer, mimeType: string): boolean {
