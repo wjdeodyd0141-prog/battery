@@ -135,7 +135,7 @@ export default function AdminHeroPage() {
             className="hidden"
             onChange={e => handleImageFile(e.target.files?.[0] ?? null)}
           />
-          <p className="text-xs text-gray-400 mt-1.5">권장 사이즈: 1920×600px 이상 / JPG·PNG·WebP</p>
+          <p className="text-xs text-gray-400 mt-1.5">권장 사이즈: <span className="text-blue-500 font-medium">1920 × 400px</span> / JPG·PNG·WebP</p>
         </div>
 
         <hr className="border-gray-100" />
