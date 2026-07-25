@@ -23,20 +23,48 @@ export class OrdersController {
     @Query('search') search?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('year') year?: string,
+    @Query('month') month?: string,
   ) {
     return this.ordersService.getAllOrders({
       status,
       search,
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 20,
+      year: year ? Number(year) : undefined,
+      month: month ? Number(month) : undefined,
     });
   }
 
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
   @Get('stats')
-  getOrderStats() {
-    return this.ordersService.getOrderStats();
+  getOrderStats(
+    @Query('year') year?: string,
+    @Query('month') month?: string,
+  ) {
+    return this.ordersService.getOrderStats(
+      year ? Number(year) : undefined,
+      month ? Number(month) : undefined,
+    );
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @Get('export')
+  exportOrders(
+    @Query('year') year: string,
+    @Query('month') month: string,
+    @Query('status') status?: string,
+  ) {
+    return this.ordersService.exportOrders(Number(year), Number(month), status);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @Get('dashboard')
+  getDashboardStats() {
+    return this.ordersService.getDashboardStats();
   }
 
   @UseGuards(RolesGuard)

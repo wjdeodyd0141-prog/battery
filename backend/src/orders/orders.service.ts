@@ -26,6 +26,8 @@ export interface OrderQueryDto {
   search?: string;
   page?: number;
   limit?: number;
+  year?: number;
+  month?: number;
 }
 
 @Injectable()
@@ -441,12 +443,22 @@ export class OrdersService {
     });
   }
 
+  private buildDateFilter(year?: number, month?: number) {
+    if (!year || !month) return undefined;
+    return {
+      gte: new Date(year, month - 1, 1),
+      lt: new Date(year, month, 1),
+    };
+  }
+
   async getAllOrders(query: OrderQueryDto = {}) {
-    const { status, search, page = 1, limit = 20 } = query;
+    const { status, search, page = 1, limit = 20, year, month } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {};
     if (status && status !== 'ALL') where.status = status;
+    const dateFilter = this.buildDateFilter(year, month);
+    if (dateFilter) where.createdAt = dateFilter;
     if (search) {
       where.OR = [
         { receiverName: { contains: search, mode: 'insensitive' } },
@@ -472,6 +484,19 @@ export class OrdersService {
     ]);
 
     return { orders, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async exportOrders(year: number, month: number, status?: string) {
+    const where: any = { createdAt: this.buildDateFilter(year, month) };
+    if (status && status !== 'ALL') where.status = status;
+    return this.prisma.order.findMany({
+      where,
+      include: {
+        items: { include: { product: { select: { name: true } } } },
+        user: { select: { username: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   async requestReturn(orderId: string, userId: string, returnType: 'RETURN' | 'EXCHANGE', returnReason: string) {
@@ -591,12 +616,15 @@ export class OrdersService {
     });
   }
 
-  async getOrderStats() {
+  async getOrderStats(year?: number, month?: number) {
+    const dateFilter = this.buildDateFilter(year, month);
+    const where: any = dateFilter ? { createdAt: dateFilter } : {};
+
     const [total, byStatus, revenue] = await Promise.all([
-      this.prisma.order.count(),
-      this.prisma.order.groupBy({ by: ['status'], _count: { _all: true } }),
+      this.prisma.order.count({ where }),
+      this.prisma.order.groupBy({ by: ['status'], where, _count: { _all: true } }),
       this.prisma.order.aggregate({
-        where: { status: { in: ['PAID', 'PREPARING', 'SHIPPED', 'DELIVERED'] } },
+        where: { ...where, status: { in: ['PAID', 'PREPARING', 'SHIPPED', 'DELIVERED'] } },
         _sum: { totalAmount: true },
       }),
     ]);
@@ -608,6 +636,43 @@ export class OrdersService {
       total,
       revenue: revenue._sum.totalAmount ?? 0,
       byStatus: statusMap,
+    };
+  }
+
+  async getDashboardStats() {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const [todayOrders, monthOrders, monthRevenue, pendingOrders, unansweredInquiries, lowStockProducts] =
+      await Promise.all([
+        this.prisma.order.count({ where: { createdAt: { gte: todayStart } } }),
+        this.prisma.order.count({ where: { createdAt: { gte: monthStart, lt: nextMonth } } }),
+        this.prisma.order.aggregate({
+          where: {
+            createdAt: { gte: monthStart, lt: nextMonth },
+            status: { in: ['PAID', 'PREPARING', 'SHIPPED', 'DELIVERED'] },
+          },
+          _sum: { totalAmount: true },
+        }),
+        this.prisma.order.count({ where: { status: 'PENDING' } }),
+        this.prisma.inquiry.count({ where: { status: 'PENDING' } }),
+        this.prisma.product.findMany({
+          where: { isActive: true, stock: { lte: 5 } },
+          select: { id: true, name: true, stock: true },
+          orderBy: { stock: 'asc' },
+          take: 10,
+        }),
+      ]);
+
+    return {
+      todayOrders,
+      monthOrders,
+      monthRevenue: monthRevenue._sum.totalAmount ?? 0,
+      pendingOrders,
+      unansweredInquiries,
+      lowStockProducts,
     };
   }
 }

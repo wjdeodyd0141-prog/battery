@@ -6,7 +6,7 @@ import Image from 'next/image';
 import {
   ArrowLeft, Search, Package, Truck, RefreshCw, RotateCcw,
   ChevronLeft, ChevronRight, User, Phone, MapPin, CreditCard, StickyNote,
-  Edit3, X, AlertTriangle, XCircle
+  Edit3, X, AlertTriangle, XCircle, Download
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
@@ -62,7 +62,7 @@ function fmt(n: number) { return n.toLocaleString('ko-KR') + '원'; }
 function shortId(id: string) { return id.slice(-8).toUpperCase(); }
 
 // ─── 통계 카드 ────────────────────────────────────────────
-function StatsRow({ stats }: { stats: Stats | null }) {
+function StatsRow({ stats, monthLabel }: { stats: Stats | null; monthLabel: string }) {
   if (!stats) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -73,12 +73,12 @@ function StatsRow({ stats }: { stats: Stats | null }) {
     );
   }
   const cards = [
-    { label: '전체 주문',  value: stats.total + '건',              color: 'text-gray-900' },
-    { label: '결제 대기',  value: (stats.byStatus['PENDING'] ?? 0) + '건', color: 'text-yellow-600' },
-    { label: '처리 중',    value: ((stats.byStatus['PAID'] ?? 0) + (stats.byStatus['PREPARING'] ?? 0)) + '건', color: 'text-blue-600' },
-    { label: '배송 중',    value: (stats.byStatus['SHIPPED'] ?? 0) + '건', color: 'text-purple-600' },
-    { label: '배송 완료',  value: (stats.byStatus['DELIVERED'] ?? 0) + '건', color: 'text-emerald-600' },
-    { label: '총 매출',    value: fmt(stats.revenue),              color: 'text-gray-900' },
+    { label: `주문 수 (${monthLabel})`, value: stats.total + '건',              color: 'text-gray-900' },
+    { label: '결제 대기',               value: (stats.byStatus['PENDING'] ?? 0) + '건', color: 'text-yellow-600' },
+    { label: '처리 중',                 value: ((stats.byStatus['PAID'] ?? 0) + (stats.byStatus['PREPARING'] ?? 0)) + '건', color: 'text-blue-600' },
+    { label: '배송 중',                 value: (stats.byStatus['SHIPPED'] ?? 0) + '건', color: 'text-purple-600' },
+    { label: '배송 완료',               value: (stats.byStatus['DELIVERED'] ?? 0) + '건', color: 'text-emerald-600' },
+    { label: `매출 (${monthLabel})`,    value: fmt(stats.revenue),              color: 'text-gray-900' },
   ];
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -558,11 +558,47 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
   );
 }
 
+// ─── CSV 다운로드 ─────────────────────────────────────────
+function downloadCSV(orders: Order[], year: number, month: number) {
+  const headers = ['주문번호', '주문일', '받는분', '연락처', '상품', '수량', '단가', '금액', '상태', '배송사', '운송장'];
+  const rows = orders.flatMap(o =>
+    o.items.map(item => [
+      `#${shortId(o.id)}`,
+      new Date(o.createdAt).toLocaleDateString('ko-KR'),
+      o.receiverName,
+      o.receiverPhone,
+      item.product?.name ?? '-',
+      item.quantity,
+      item.price,
+      item.price * item.quantity,
+      STATUS_META[o.status]?.label ?? o.status,
+      o.carrier ?? '-',
+      o.trackingNumber ?? '-',
+    ])
+  );
+  const csvContent = '﻿' + [headers, ...rows]
+    .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `주문목록_${year}년${month}월.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ─── 메인 페이지 ─────────────────────────────────────────
+const TODAY = new Date();
+const TODAY_YEAR = TODAY.getFullYear();
+const TODAY_MONTH = TODAY.getMonth() + 1;
+
 export default function AdminOrdersPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  const [selectedYear, setSelectedYear] = useState(TODAY_YEAR);
+  const [selectedMonth, setSelectedMonth] = useState(TODAY_MONTH);
   const [stats, setStats] = useState<Stats | null>(null);
   const [data, setData] = useState<OrdersResponse | null>(null);
   const [fetching, setFetching] = useState(true);
@@ -571,14 +607,15 @@ export default function AdminOrdersPage() {
   const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'ADMIN')) router.push('/');
   }, [user, loading]);
 
   const fetchStats = useCallback(() => {
-    api.get<Stats>('/orders/stats').then(setStats).catch(() => {});
-  }, []);
+    api.get<Stats>(`/orders/stats?year=${selectedYear}&month=${selectedMonth}`).then(setStats).catch(() => {});
+  }, [selectedYear, selectedMonth]);
 
   const fetchOrders = useCallback(() => {
     setFetching(true);
@@ -587,12 +624,14 @@ export default function AdminOrdersPage() {
     if (search) params.set('search', search);
     params.set('page', String(page));
     params.set('limit', '15');
+    params.set('year', String(selectedYear));
+    params.set('month', String(selectedMonth));
 
     api.get<OrdersResponse>(`/orders/all?${params.toString()}`)
       .then(setData)
       .catch(() => {})
       .finally(() => setFetching(false));
-  }, [statusFilter, search, page]);
+  }, [statusFilter, search, page, selectedYear, selectedMonth]);
 
   useEffect(() => {
     if (user?.role === 'ADMIN') {
@@ -605,6 +644,33 @@ export default function AdminOrdersPage() {
 
   const handleFilterChange = (s: string) => { setStatusFilter(s); setPage(1); };
 
+  const handleMonthChange = (delta: number) => {
+    let newYear = selectedYear;
+    let newMonth = selectedMonth + delta;
+    if (newMonth < 1) { newMonth = 12; newYear--; }
+    else if (newMonth > 12) { newMonth = 1; newYear++; }
+    setPage(1);
+    setStats(null);
+    setData(null);
+    setSelectedYear(newYear);
+    setSelectedMonth(newMonth);
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({ year: String(selectedYear), month: String(selectedMonth) });
+      if (statusFilter !== 'ALL') params.set('status', statusFilter);
+      const orders = await api.get<Order[]>(`/orders/export?${params.toString()}`);
+      downloadCSV(orders, selectedYear, selectedMonth);
+      toast.success(`${selectedYear}년 ${selectedMonth}월 주문 ${orders.length}건 다운로드`);
+    } catch {
+      toast.error('다운로드에 실패했습니다.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleOrderUpdate = (updated: Order) => {
     setData(prev => prev ? {
       ...prev,
@@ -612,9 +678,12 @@ export default function AdminOrdersPage() {
     } : prev);
     setSelectedOrder(updated);
     fetchStats();
+    fetchOrders();
   };
 
   if (loading || !user || user.role !== 'ADMIN') return null;
+
+  const monthLabel = `${selectedYear}년 ${selectedMonth}월`;
 
   const filterTabs = [
     { key: 'ALL', label: '전체' },
@@ -645,8 +714,36 @@ export default function AdminOrdersPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+        {/* 월 선택 + 다운로드 */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleMonthChange(-1)}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-base font-bold text-gray-900 min-w-[120px] text-center">{monthLabel}</span>
+            <button
+              onClick={() => handleMonthChange(1)}
+              disabled={selectedYear === TODAY_YEAR && selectedMonth === TODAY_MONTH}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-all disabled:opacity-30"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            {exporting ? '준비 중...' : 'CSV 다운로드'}
+          </button>
+        </div>
+
         {/* 통계 카드 */}
-        <StatsRow stats={stats} />
+        <StatsRow stats={stats} monthLabel={monthLabel} />
 
         {/* 필터 + 검색 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
