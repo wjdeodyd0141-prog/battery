@@ -1,5 +1,6 @@
 export const revalidate = 60;
 import { notFound } from 'next/navigation';
+import { Metadata } from 'next';
 import Image from 'next/image';
 import sanitizeHtml from 'sanitize-html';
 import { Zap, Star, Package, Coins } from 'lucide-react';
@@ -22,6 +23,22 @@ async function getProduct(slug: string): Promise<Product | null> {
   } catch {
     return null;
   }
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const product = await getProduct(params.slug);
+  if (!product) return {};
+
+  const image = product.imageUrls?.[0];
+  return {
+    title: product.name,
+    description: `${product.name} - ${product.price.toLocaleString()}원. 파워뱅크 전시장에서 만나보세요.`,
+    openGraph: {
+      title: product.name,
+      description: `${product.name} - ${product.price.toLocaleString()}원`,
+      ...(image && { images: [{ url: image, width: 800, height: 800, alt: product.name }] }),
+    },
+  };
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {

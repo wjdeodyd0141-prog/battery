@@ -12,8 +12,23 @@ import { Toaster } from '@/components/ui/sonner';
 const geist = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: '파워뱅크 전시장 - 배터리 전문 쇼핑몰',
-  description: '고품질 배터리 전문 쇼핑몰. 리튬, 알카라인, 충전용 배터리를 합리적인 가격으로.',
+  title: {
+    default: '파워뱅크 전시장 - 배터리 전문 쇼핑몰',
+    template: '%s | 파워뱅크 전시장',
+  },
+  description: '고품질 배터리 전문 쇼핑몰. 리튬, 알카라인, 충전용 배터리를 합리적인 가격으로 만나보세요.',
+  metadataBase: new URL('https://powerbankmall.co.kr'),
+  openGraph: {
+    type: 'website',
+    locale: 'ko_KR',
+    siteName: '파워뱅크 전시장',
+    title: '파워뱅크 전시장 - 배터리 전문 쇼핑몰',
+    description: '고품질 배터리 전문 쇼핑몰. 리튬, 알카라인, 충전용 배터리를 합리적인 가격으로 만나보세요.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
