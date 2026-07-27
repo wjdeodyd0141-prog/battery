@@ -39,7 +39,7 @@ export default async function Footer() {
             <div className="mt-6 space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-gray-500 shrink-0" />
-                <span>010-3532-3799 (평일 09:00~18:00)</span>
+                <span>02-2668-3799 (평일 09:00~18:00)</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-gray-500 shrink-0" />
@@ -105,7 +105,7 @@ export default async function Footer() {
               <span className="text-gray-500 font-medium">주소</span> 서울특별시 강서구 공항대로 195 힐스테이트에코동익 109호 (우: 07801)
             </p>
             <p>
-              <span className="text-gray-500 font-medium">전화</span> 010-3532-3799&nbsp;&nbsp;
+              <span className="text-gray-500 font-medium">전화</span> 02-2668-3799&nbsp;&nbsp;
               <span className="text-gray-500 font-medium">이메일</span> symict1@naver.com
             </p>
           </div>

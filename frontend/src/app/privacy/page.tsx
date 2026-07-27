@@ -165,7 +165,7 @@ export default function PrivacyPage() {
                   <div className="mt-2 bg-gray-50 rounded-lg p-4 text-sm">
                     <p><strong>개인정보 보호책임자</strong></p>
                     <p className="mt-1">성명: 정태산 (대표)</p>
-                    <p>전화: 010-3532-3799</p>
+                    <p>전화: 02-2668-3799</p>
                     <p>이메일: symict1@naver.com</p>
                   </div>
                 </li>
