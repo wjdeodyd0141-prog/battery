@@ -323,3 +323,13 @@ model RefreshToken {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model B2bInquiry {
+  id          String   @id @default(cuid())
+  companyName String
+  bizNumber   String
+  contactName String
+  phone       String
+  content     String
+  createdAt   DateTime @default(now())
+}

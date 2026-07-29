@@ -7,6 +7,7 @@ const SUPPORT_LINKS = [
   { href: '/my', label: '마이페이지' },
   { href: '/inquiry', label: '1:1 문의' },
   { href: '/faq', label: '자주 묻는 질문' },
+  { href: '/b2b', label: 'B2B 구매 문의' },
 ];
 
 async function getCategories(): Promise<Category[]> {

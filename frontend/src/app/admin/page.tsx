@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   Package, Tag, Users, ShoppingBag, MessageSquare, ImagePlay, Layers,
   ChevronRight, HelpCircle, Coins, Ticket, LayoutTemplate, AlertTriangle,
-  TrendingUp, Clock, ShoppingCart, Inbox,
+  TrendingUp, Clock, ShoppingCart, Inbox, Building2,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
@@ -34,6 +34,7 @@ const menus = [
   { href: '/admin/faq', icon: HelpCircle, title: 'FAQ 관리', desc: '자주 묻는 질문 등록/수정/삭제' },
   { href: '/admin/mileage', icon: Coins, title: '마일리지 관리', desc: '적립률 설정 및 회원 마일리지 지급/차감' },
   { href: '/admin/coupons', icon: Ticket, title: '쿠폰 관리', desc: '쿠폰 생성 및 회원별 발급' },
+  { href: '/admin/b2b', icon: Building2, title: 'B2B 구매 문의', desc: '기업·단체 대량 구매 문의 목록' },
 ];
 
 function fmt(n: number) { return n.toLocaleString('ko-KR') + '원'; }
