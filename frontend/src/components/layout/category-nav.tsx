@@ -10,6 +10,7 @@ import { Category } from '@/lib/types';
 const STATIC_FRONT = [
   { label: '전체상품', href: '/products' },
   { label: '베스트', href: '/products?sort=best' },
+  { label: 'B2B 문의', href: '/b2b' },
 ];
 
 export default function CategoryNav() {
