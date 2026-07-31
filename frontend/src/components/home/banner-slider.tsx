@@ -98,7 +98,7 @@ export default function BannerSlider() {
           className={`absolute inset-0 transition-opacity duration-700 ${idx === current ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
         >
           {b.linkUrl ? (
-            <Link href={b.linkUrl} className="block w-full h-full" draggable={false}>
+            <Link href={b.linkUrl} className="block w-full h-full" draggable={false} target="_blank" rel="noopener noreferrer">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={b.imageUrl} alt={b.title || `배너 ${idx + 1}`} className="absolute inset-0 w-full h-full object-cover pointer-events-none" draggable={false} />
               {(b.title || b.subtitle) && (
