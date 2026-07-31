@@ -34,13 +34,13 @@ export default async function Footer() {
               파워뱅크 전시장
             </Link>
             <p className="text-sm leading-relaxed max-w-xs">
-              고품질 배터리 전문 쇼핑몰 파워뱅크 전시장입니다.<br />
-              리튬, 알카라인, 충전용 배터리 등 다양한 배터리를 합리적인 가격으로 제공합니다.
+              국내유일 파워뱅크 전문 쇼핑몰 파워뱅크 전시장입니다.<br />
+              KC안전인증획득, 검증된 파워뱅크를 합리적인 금액으로 제공합니다.
             </p>
             <div className="mt-6 space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-gray-500 shrink-0" />
-                <span>02-2668-3799 (평일 09:00~18:00)</span>
+                <span>02-2668-3799 (업무시간 10시~19시)</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-gray-500 shrink-0" />
@@ -84,8 +84,8 @@ export default async function Footer() {
                   </Link>
                 </li>
               ))}
-              <li><span className="text-gray-600">평일 09:00 ~ 18:00</span></li>
-              <li><span className="text-gray-600">주말/공휴일 휴무</span></li>
+              <li><span className="text-gray-600">업무시간 10시~19시</span></li>
+              <li><span className="text-gray-600">연중무휴</span></li>
             </ul>
           </div>
         </div>

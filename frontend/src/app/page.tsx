@@ -62,7 +62,7 @@ const FEATURES = [
   { icon: Truck, title: '무료 배송', desc: '전 제품 무료배송', color: 'text-emerald-600', bg: 'bg-emerald-50' },
   { icon: ShieldCheck, title: '품질 보증', desc: '정품 인증 배터리', color: 'text-blue-600', bg: 'bg-blue-50' },
   { icon: Zap, title: '빠른 배송', desc: '당일 발송 (오후 3시 전)', color: 'text-amber-600', bg: 'bg-amber-50' },
-  { icon: HeadphonesIcon, title: '고객센터', desc: '평일 09:00 ~ 18:00', color: 'text-violet-600', bg: 'bg-violet-50' },
+  { icon: HeadphonesIcon, title: '고객센터', desc: '10시~19시 연중무휴', color: 'text-violet-600', bg: 'bg-violet-50' },
 ];
 
 export default async function HomePage() {
