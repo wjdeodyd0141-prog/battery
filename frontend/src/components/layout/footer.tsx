@@ -116,6 +116,7 @@ export default async function Footer() {
               <Link href="/privacy" className="hover:text-gray-400 transition-colors">개인정보처리방침</Link>
               <Link href="/terms" className="hover:text-gray-400 transition-colors">이용약관</Link>
               <Link href="/refund" className="hover:text-gray-400 transition-colors">취소/환불정책</Link>
+              <Link href="/shipping" className="hover:text-gray-400 transition-colors">배송안내</Link>
             </div>
           </div>
         </div>
