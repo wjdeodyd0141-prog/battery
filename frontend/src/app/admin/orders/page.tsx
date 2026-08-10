@@ -208,9 +208,32 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
               <RefreshCw className="w-4 h-4" /> 상태 변경
             </h3>
             {order.status === 'PENDING' ? (
-              <div className="flex items-center gap-2.5 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-700">
-                <AlertTriangle className="w-4 h-4 shrink-0" />
-                결제가 완료된 후에 주문을 처리할 수 있습니다.
+              <div className="space-y-3">
+                <div className="flex items-center gap-2.5 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-700">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  결제가 완료된 후에 주문을 처리할 수 있습니다.
+                </div>
+                {!showCancelConfirm ? (
+                  <button
+                    onClick={() => { setPendingStatus('CANCELLED'); setShowCancelConfirm(true); }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 text-sm font-semibold rounded-xl transition-colors"
+                  >
+                    <XCircle className="w-4 h-4" /> 주문 취소 처리
+                  </button>
+                ) : (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-sm text-red-700">
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      <span>결제 대기 주문을 취소하시겠습니까?</span>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button onClick={() => applyStatus('CANCELLED')} disabled={changingStatus} className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg disabled:opacity-50">
+                        {changingStatus ? '처리 중...' : '취소 확인'}
+                      </button>
+                      <button onClick={() => { setShowCancelConfirm(false); setPendingStatus(null); }} className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs font-semibold rounded-lg">돌아가기</button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -854,7 +877,7 @@ export default function AdminOrdersPage() {
                         )}
                       </div>
 
-                      <div onClick={e => e.stopPropagation()}>
+                      <div onClick={e => e.stopPropagation()} className="flex flex-col gap-1">
                         {nextStatus ? (
                           <button
                             onClick={async () => {
@@ -874,6 +897,21 @@ export default function AdminOrdersPage() {
                             className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 text-gray-400 text-xs rounded-lg hover:bg-gray-50 transition-colors"
                           >
                             <Edit3 className="w-3 h-3" /> 상세
+                          </button>
+                        )}
+                        {order.status === 'PENDING' && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm('결제 대기 주문을 취소하시겠습니까?')) return;
+                              try {
+                                const updated = await api.patch<Order>(`/orders/${order.id}/status`, { status: 'CANCELLED' });
+                                handleOrderUpdate({ ...order, ...updated });
+                                toast.success('주문이 취소되었습니다.');
+                              } catch { toast.error('취소 처리 실패'); }
+                            }}
+                            className="flex items-center gap-1 px-3 py-1.5 border border-red-200 text-red-500 text-xs rounded-lg hover:bg-red-50 transition-colors"
+                          >
+                            <XCircle className="w-3 h-3" /> 취소
                           </button>
                         )}
                       </div>
