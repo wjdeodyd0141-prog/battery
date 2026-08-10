@@ -18,6 +18,20 @@ const QUICK_MENU = [
   { href: '/my/coupons', icon: Ticket,  label: '쿠폰함',    desc: '보유 쿠폰 확인',    color: 'text-purple-600',  bg: 'bg-purple-50' },
 ];
 
+const formatPhone = (val: string) => {
+  const d = val.replace(/\D/g, '').slice(0, 11);
+  if (d.startsWith('02')) {
+    if (d.length <= 2) return d;
+    if (d.length <= 5) return `${d.slice(0, 2)}-${d.slice(2)}`;
+    if (d.length <= 9) return `${d.slice(0, 2)}-${d.slice(2, 5)}-${d.slice(5)}`;
+    return `${d.slice(0, 2)}-${d.slice(2, 6)}-${d.slice(6, 10)}`;
+  }
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  if (d.length <= 10) return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
+};
+
 export default function MyPage() {
   const { user, loading, refreshUser } = useAuth();
   const router = useRouter();
@@ -156,8 +170,9 @@ export default function MyPage() {
                 <Input
                   id="phone"
                   value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
                   placeholder="010-0000-0000"
+                  inputMode="tel"
                   className="h-10 rounded-xl border-gray-200"
                 />
               </div>

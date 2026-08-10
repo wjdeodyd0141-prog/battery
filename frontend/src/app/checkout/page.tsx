@@ -112,6 +112,20 @@ export default function CheckoutPage() {
   if (loading || !user || cart === null) return null;
   if (cart.items.length === 0) return null;
 
+  const formatPhone = (val: string) => {
+    const d = val.replace(/\D/g, '').slice(0, 11);
+    if (d.startsWith('02')) {
+      if (d.length <= 2) return d;
+      if (d.length <= 5) return `${d.slice(0, 2)}-${d.slice(2)}`;
+      if (d.length <= 9) return `${d.slice(0, 2)}-${d.slice(2, 5)}-${d.slice(5)}`;
+      return `${d.slice(0, 2)}-${d.slice(2, 6)}-${d.slice(6, 10)}`;
+    }
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
+    if (d.length <= 10) return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
+    return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
+  };
+
   const update = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [field]: e.target.value });
 
@@ -179,7 +193,7 @@ export default function CheckoutPage() {
                   </div>
                   <div>
                     <Label htmlFor="receiverPhone">연락처 *</Label>
-                    <Input id="receiverPhone" value={form.receiverPhone} onChange={update('receiverPhone')} placeholder="010-0000-0000" className="mt-1" />
+                    <Input id="receiverPhone" value={form.receiverPhone} onChange={e => setForm({ ...form, receiverPhone: formatPhone(e.target.value) })} placeholder="010-0000-0000" inputMode="tel" className="mt-1" />
                   </div>
                 </div>
                 <div>
