@@ -218,7 +218,7 @@ export default function CheckoutPage() {
             {finalAmount > 0 && (
               <div className="bg-white rounded-xl border p-6">
                 <h2 className="font-semibold text-gray-900 mb-4">결제 수단</h2>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {PAYMENT_METHODS.map(({ key, label, icon: Icon }) => (
                     <button
                       key={key}
