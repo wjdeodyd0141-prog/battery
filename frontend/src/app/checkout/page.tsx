@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Zap, MapPin, Coins, CreditCard, Banknote, Building2 } from 'lucide-react';
+import { Zap, MapPin, Coins, CreditCard, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,7 +24,6 @@ declare global {
 const PAYMENT_METHODS = [
   { key: '카드', label: '신용/체크카드', icon: CreditCard },
   { key: '계좌이체', label: '계좌이체', icon: Banknote },
-  { key: '가상계좌', label: '가상계좌', icon: Building2 },
 ];
 
 export default function CheckoutPage() {
