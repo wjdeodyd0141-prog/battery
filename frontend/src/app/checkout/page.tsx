@@ -15,7 +15,10 @@ import { Order } from '@/lib/types';
 import { toast } from 'sonner';
 
 declare global {
-  interface Window { daum: any; }
+  interface Window {
+    PaymentWidget: any;
+    daum: any;
+  }
 }
 
 export default function CheckoutPage() {
@@ -48,42 +51,48 @@ export default function CheckoutPage() {
   const mileageUsed = Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, orderTotal));
   const finalAmount = orderTotal - mileageUsed;
 
-  // 결제위젯 초기화 — npm 패키지 사용
+  // 결제위젯 초기화
   useEffect(() => {
-    if (!user || !cart || cart.items.length === 0 || finalAmount <= 0) return;
+    if (!user || !cart || cart.items.length === 0) return;
 
-    let cancelled = false;
+    const daum = document.createElement('script');
+    daum.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+    document.head.appendChild(daum);
 
-    const init = async () => {
+    // 올바른 CDN URL: v1/payment-widget (v2는 존재하지 않음)
+    const script = document.createElement('script');
+    script.src = 'https://js.tosspayments.com/v1/payment-widget';
+    script.async = true;
+
+    script.onerror = () => {
+      setWidgetError('결제 모듈을 불러오지 못했습니다 (js.tosspayments.com 접근 불가)');
+    };
+
+    script.onload = async () => {
       try {
-        // 주소 검색 스크립트
-        const daum = document.createElement('script');
-        daum.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
-        document.head.appendChild(daum);
-
-        const { loadPaymentWidget } = await import('@tosspayments/payment-widget-sdk');
         const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || '';
-        const widget = await loadPaymentWidget(clientKey, user.id);
-        if (cancelled) return;
-
+        const customerKey = user.id;
+        const widget = window.PaymentWidget(clientKey, customerKey);
         paymentWidgetRef.current = widget;
-        const methodsWidget = widget.renderPaymentMethods('#payment-methods', { value: finalAmount });
+        const methodsWidget = await widget.renderPaymentMethods('#payment-methods', { value: finalAmount });
         paymentMethodsWidgetRef.current = methodsWidget;
-        widget.renderAgreement('#payment-agreement');
-        if (!cancelled) setWidgetReady(true);
+        await widget.renderAgreement('#payment-agreement');
+        setWidgetReady(true);
       } catch (err: any) {
-        if (cancelled) return;
         const msg = err?.message || String(err) || '알 수 없는 오류';
         console.error('[TossWidget]', err);
         setWidgetError(msg);
       }
     };
 
-    init();
-    return () => { cancelled = true; };
-  }, [user?.id, cart?.items.length, finalAmount <= 0]);
+    document.head.appendChild(script);
 
-  // 금액 변경 시 위젯 업데이트
+    return () => {
+      if (document.head.contains(script)) document.head.removeChild(script);
+      if (document.head.contains(daum)) document.head.removeChild(daum);
+    };
+  }, [user?.id, cart?.items.length]);
+
   useEffect(() => {
     paymentMethodsWidgetRef.current?.updateAmount(finalAmount);
   }, [finalAmount]);
