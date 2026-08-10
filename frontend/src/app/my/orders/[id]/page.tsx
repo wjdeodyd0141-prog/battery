@@ -4,12 +4,19 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Zap, MapPin, Phone, User, Check, Truck, Package, PartyPopper, XCircle, AlertTriangle, RotateCcw, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Zap, MapPin, Phone, User, Check, Truck, Package, PartyPopper, XCircle, AlertTriangle, RotateCcw, RefreshCw, CreditCard, Banknote, AlertCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { Order, OrderStatus } from '@/lib/types';
 import { toast } from 'sonner';
+
+declare global { interface Window { TossPayments: any; } }
+
+const RETRY_METHODS = [
+  { key: '카드', label: '신용/체크카드', icon: CreditCard, underReview: true },
+  { key: '계좌이체', label: '계좌이체', icon: Banknote, underReview: false },
+];
 
 const STATUS_MAP: Record<OrderStatus, { label: string; color: string; bg: string; dot: string; step: number }> = {
   PENDING:   { label: '결제 대기', color: 'text-yellow-700', bg: 'bg-yellow-50',  dot: 'bg-yellow-400', step: 0 },
@@ -39,6 +46,9 @@ export default function OrderDetailPage() {
   const [returnType, setReturnType] = useState<'RETURN' | 'EXCHANGE'>('RETURN');
   const [returnReason, setReturnReason] = useState('');
   const [returning, setReturning] = useState(false);
+  const [tossReady, setTossReady] = useState(false);
+  const [retryMethod, setRetryMethod] = useState('카드');
+  const [retryProcessing, setRetryProcessing] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) { router.push('/login'); return; }
@@ -48,6 +58,39 @@ export default function OrderDetailPage() {
         .catch(() => router.push('/my/orders'));
     }
   }, [user, loading, params.id]);
+
+  useEffect(() => {
+    if (!order || order.status !== 'PENDING') return;
+    const script = document.createElement('script');
+    script.src = 'https://js.tosspayments.com/v1';
+    script.async = true;
+    script.onload = () => setTossReady(true);
+    document.head.appendChild(script);
+    return () => { if (document.head.contains(script)) document.head.removeChild(script); };
+  }, [order?.status]);
+
+  const handleRetryPayment = async () => {
+    if (!order) return;
+    setRetryProcessing(true);
+    try {
+      const finalAmount = order.totalAmount - (order.mileageUsed ?? 0);
+      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || '';
+      const tossPayments = window.TossPayments(clientKey);
+      await tossPayments.requestPayment(retryMethod, {
+        amount: finalAmount,
+        orderId: order.id,
+        orderName: order.items.length === 1
+          ? order.items[0].product.name
+          : `${order.items[0].product.name} 외 ${order.items.length - 1}건`,
+        customerName: order.receiverName,
+        successUrl: `${window.location.origin}/checkout/success`,
+        failUrl: `${window.location.origin}/checkout/fail`,
+      });
+    } catch (err: any) {
+      if (err.code !== 'USER_CANCEL') toast.error(err.message || '결제 중 오류가 발생했습니다.');
+      setRetryProcessing(false);
+    }
+  };
 
   const handleCancel = async () => {
     setCancelling(true);
@@ -233,6 +276,48 @@ export default function OrderDetailPage() {
                 <p className="text-sm font-mono font-bold text-purple-700">{order.trackingNumber}</p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* 결제 대기 - 다시 결제하기 */}
+        {order.status === 'PENDING' && (
+          <div className="bg-white rounded-2xl border border-amber-200 p-5 space-y-4">
+            <div className="flex gap-3 bg-amber-50 rounded-xl p-3">
+              <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-semibold text-amber-800 mb-0.5">결제가 완료되지 않았습니다</p>
+                <p className="text-amber-700">결제 수단을 선택하고 다시 결제해 주세요.<br />
+                  <span className="font-semibold">현재 계좌이체만 정상 결제 가능합니다.</span> (카드사 심사 진행 중)
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {RETRY_METHODS.map(({ key, label, icon: Icon, underReview }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setRetryMethod(key)}
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    retryMethod === key
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="text-sm font-medium">{label}</span>
+                  {underReview && (
+                    <span className="absolute top-2 right-2 text-[10px] bg-amber-100 text-amber-600 font-semibold px-1.5 py-0.5 rounded-full">심사중</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleRetryPayment}
+              disabled={retryProcessing || !tossReady}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 text-sm"
+            >
+              {retryProcessing ? '처리 중...' : !tossReady ? '로딩 중...' : `${(order.totalAmount - (order.mileageUsed ?? 0)).toLocaleString()}원 결제하기`}
+            </button>
           </div>
         )}
 

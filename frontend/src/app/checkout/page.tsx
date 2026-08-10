@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Zap, MapPin, Coins, CreditCard, Banknote } from 'lucide-react';
+import { Zap, MapPin, Coins, CreditCard, Banknote, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -218,22 +218,41 @@ export default function CheckoutPage() {
             {finalAmount > 0 && (
               <div className="bg-white rounded-xl border p-6">
                 <h2 className="font-semibold text-gray-900 mb-4">결제 수단</h2>
+
+                {/* 카드사 심사 안내 */}
+                <div className="flex gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                  <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-amber-800 mb-1">현재 <span className="text-blue-700">계좌이체</span>만 정상 결제 가능합니다</p>
+                    <p className="text-amber-700 leading-relaxed">
+                      카드사 가맹점 심사 진행 중으로 신용/체크카드 및 간편결제(토스페이, 카카오페이 등)는 일시적으로 이용이 제한됩니다.<br />
+                      심사 완료 후 모든 결제 수단을 이용하실 수 있습니다. (최대 10~14 영업일 소요)
+                    </p>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
-                  {PAYMENT_METHODS.map(({ key, label, icon: Icon }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setSelectedMethod(key)}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                        selectedMethod === key
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span className="text-sm font-medium">{label}</span>
-                    </button>
-                  ))}
+                  {PAYMENT_METHODS.map(({ key, label, icon: Icon }) => {
+                    const isCardUnderReview = key === '카드';
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setSelectedMethod(key)}
+                        className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                          selectedMethod === key
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                        <span className="text-sm font-medium">{label}</span>
+                        {isCardUnderReview && (
+                          <span className="absolute top-2 right-2 text-[10px] bg-amber-100 text-amber-600 font-semibold px-1.5 py-0.5 rounded-full">심사중</span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
