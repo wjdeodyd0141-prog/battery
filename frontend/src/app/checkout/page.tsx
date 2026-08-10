@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Zap, MapPin, Coins, AlertCircle, RefreshCw } from 'lucide-react';
+import { Zap, MapPin, Coins, CreditCard, Banknote, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,10 +16,16 @@ import { toast } from 'sonner';
 
 declare global {
   interface Window {
-    PaymentWidget: any;
+    TossPayments: any;
     daum: any;
   }
 }
+
+const PAYMENT_METHODS = [
+  { key: '카드', label: '신용/체크카드', icon: CreditCard },
+  { key: '계좌이체', label: '계좌이체', icon: Banknote },
+  { key: '가상계좌', label: '가상계좌', icon: Building2 },
+];
 
 export default function CheckoutPage() {
   const { cart } = useCart();
@@ -29,10 +35,8 @@ export default function CheckoutPage() {
   const [mileageBalance, setMileageBalance] = useState(0);
   const [mileageInput, setMileageInput] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [widgetReady, setWidgetReady] = useState(false);
-  const [widgetError, setWidgetError] = useState('');
-  const paymentWidgetRef = useRef<any>(null);
-  const paymentMethodsWidgetRef = useRef<any>(null);
+  const [tossReady, setTossReady] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState('카드');
 
   useEffect(() => {
     if (loading) return;
@@ -51,7 +55,6 @@ export default function CheckoutPage() {
   const mileageUsed = Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, orderTotal));
   const finalAmount = orderTotal - mileageUsed;
 
-  // 결제위젯 초기화
   useEffect(() => {
     if (!user || !cart || cart.items.length === 0) return;
 
@@ -59,32 +62,11 @@ export default function CheckoutPage() {
     daum.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
     document.head.appendChild(daum);
 
-    // 올바른 CDN URL: v1/payment-widget (v2는 존재하지 않음)
     const script = document.createElement('script');
-    script.src = 'https://js.tosspayments.com/v1/payment-widget';
+    script.src = 'https://js.tosspayments.com/v1';
     script.async = true;
-
-    script.onerror = () => {
-      setWidgetError('결제 모듈을 불러오지 못했습니다 (js.tosspayments.com 접근 불가)');
-    };
-
-    script.onload = async () => {
-      try {
-        const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || '';
-        const customerKey = user.id;
-        const widget = window.PaymentWidget(clientKey, customerKey);
-        paymentWidgetRef.current = widget;
-        const methodsWidget = await widget.renderPaymentMethods('#payment-methods', { value: finalAmount });
-        paymentMethodsWidgetRef.current = methodsWidget;
-        await widget.renderAgreement('#payment-agreement');
-        setWidgetReady(true);
-      } catch (err: any) {
-        const msg = err?.message || String(err) || '알 수 없는 오류';
-        console.error('[TossWidget]', err);
-        setWidgetError(msg);
-      }
-    };
-
+    script.onload = () => setTossReady(true);
+    script.onerror = () => toast.error('결제 모듈을 불러오지 못했습니다.');
     document.head.appendChild(script);
 
     return () => {
@@ -93,9 +75,19 @@ export default function CheckoutPage() {
     };
   }, [user?.id, cart?.items.length]);
 
-  useEffect(() => {
-    paymentMethodsWidgetRef.current?.updateAmount(finalAmount);
-  }, [finalAmount]);
+  const formatPhone = (val: string) => {
+    const d = val.replace(/\D/g, '').slice(0, 11);
+    if (d.startsWith('02')) {
+      if (d.length <= 2) return d;
+      if (d.length <= 5) return `${d.slice(0, 2)}-${d.slice(2)}`;
+      if (d.length <= 9) return `${d.slice(0, 2)}-${d.slice(2, 5)}-${d.slice(5)}`;
+      return `${d.slice(0, 2)}-${d.slice(2, 6)}-${d.slice(6, 10)}`;
+    }
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
+    if (d.length <= 10) return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
+    return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
+  };
 
   const openAddressSearch = useCallback(() => {
     if (!window.daum?.Postcode) {
@@ -111,20 +103,6 @@ export default function CheckoutPage() {
 
   if (loading || !user || cart === null) return null;
   if (cart.items.length === 0) return null;
-
-  const formatPhone = (val: string) => {
-    const d = val.replace(/\D/g, '').slice(0, 11);
-    if (d.startsWith('02')) {
-      if (d.length <= 2) return d;
-      if (d.length <= 5) return `${d.slice(0, 2)}-${d.slice(2)}`;
-      if (d.length <= 9) return `${d.slice(0, 2)}-${d.slice(2, 5)}-${d.slice(5)}`;
-      return `${d.slice(0, 2)}-${d.slice(2, 6)}-${d.slice(6, 10)}`;
-    }
-    if (d.length <= 3) return d;
-    if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
-    if (d.length <= 10) return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
-    return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
-  };
 
   const update = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [field]: e.target.value });
@@ -157,7 +135,10 @@ export default function CheckoutPage() {
         return;
       }
 
-      await paymentWidgetRef.current.requestPayment({
+      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || '';
+      const tossPayments = window.TossPayments(clientKey);
+      await tossPayments.requestPayment(selectedMethod, {
+        amount: finalAmount,
         orderId: order.id,
         orderName: cart.items.length === 1
           ? cart.items[0].product.name
@@ -234,28 +215,27 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 결제 위젯 */}
+            {/* 결제 수단 선택 */}
             {finalAmount > 0 && (
               <div className="bg-white rounded-xl border p-6">
                 <h2 className="font-semibold text-gray-900 mb-4">결제 수단</h2>
-                {widgetError ? (
-                  <div className="space-y-3 py-4">
-                    <div className="flex items-start gap-2 text-red-500">
-                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">결제 수단을 불러오지 못했습니다.</p>
-                        <p className="text-xs mt-1 text-gray-500 font-mono break-all">{widgetError}</p>
-                      </div>
-                    </div>
-                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => window.location.reload()}>
-                      <RefreshCw className="w-3.5 h-3.5" />새로고침
-                    </Button>
-                  </div>
-                ) : !widgetReady ? (
-                  <div className="flex items-center justify-center h-32 text-sm text-gray-400">결제 수단 불러오는 중...</div>
-                ) : null}
-                <div id="payment-methods" />
-                <div id="payment-agreement" className="mt-2" />
+                <div className="grid grid-cols-3 gap-3">
+                  {PAYMENT_METHODS.map(({ key, label, icon: Icon }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setSelectedMethod(key)}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                        selectedMethod === key
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-sm font-medium">{label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -302,12 +282,11 @@ export default function CheckoutPage() {
               <Button
                 type="submit"
                 className="w-full h-12 bg-blue-600 hover:bg-blue-700 font-semibold text-base"
-                disabled={processing || (finalAmount > 0 && (!widgetReady || !!widgetError))}
+                disabled={processing || (finalAmount > 0 && !tossReady)}
               >
                 {processing ? '처리 중...'
                   : finalAmount === 0 ? '마일리지로 무료 결제'
-                  : widgetError ? '결제 수단 오류'
-                  : !widgetReady ? '로딩 중...'
+                  : !tossReady ? '로딩 중...'
                   : `${finalAmount.toLocaleString()}원 결제하기`}
               </Button>
               <p className="text-xs text-center text-gray-400 mt-3">토스페이먼츠 보안 결제</p>
