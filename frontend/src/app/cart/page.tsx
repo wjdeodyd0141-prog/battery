@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Minus, Plus, Trash2, ShoppingCart, Zap } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingCart, Zap, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/lib/cart-context';
@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 
 export default function CartPage() {
   const { cart, updateItem, removeItem, itemCount } = useCart();
+  const [navigating, setNavigating] = useState(false);
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -144,10 +145,12 @@ export default function CartPage() {
               <span>합계</span>
               <span className="text-blue-600">{(totalAmount + shippingFee).toLocaleString()}원</span>
             </div>
-            <Button className="w-full h-12 bg-blue-600 hover:bg-blue-700 font-semibold text-base" asChild>
-              <Link href="/checkout">
-                결제하기
-              </Link>
+            <Button
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 font-semibold text-base"
+              disabled={navigating}
+              onClick={() => { setNavigating(true); router.push('/checkout'); }}
+            >
+              {navigating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />이동 중...</> : '결제하기'}
             </Button>
             <Button variant="outline" className="w-full mt-2" asChild>
               <Link href="/products">쇼핑 계속하기</Link>

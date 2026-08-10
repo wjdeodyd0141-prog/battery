@@ -34,12 +34,18 @@ export default function CheckoutPage() {
   const paymentMethodsWidgetRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!loading && !user) router.push('/login');
-    if (!loading && user) {
-      setForm(f => ({ ...f, receiverName: user.name || '', receiverPhone: user.phone || '', shippingAddress: user.address || '' }));
-      api.get<{ balance: number }>('/mileage/balance').then(r => setMileageBalance(r.balance)).catch(() => {});
-    }
+    if (loading) return;
+    if (!user) { router.push('/login'); return; }
+    setForm(f => ({ ...f, receiverName: user.name || '', receiverPhone: user.phone || '', shippingAddress: user.address || '' }));
+    api.get<{ balance: number }>('/mileage/balance').then(r => setMileageBalance(r.balance)).catch(() => {});
   }, [user, loading]);
+
+  // cart가 로드된 후에만 체크 — 렌더 중 redirect 방지
+  useEffect(() => {
+    if (!loading && user && cart !== null && cart.items.length === 0) {
+      router.push('/cart');
+    }
+  }, [cart, loading, user]);
 
   const totalAmount = cart?.items.reduce((sum, item) => sum + (item.product.price + (item.optionPrice ?? 0)) * item.quantity, 0) ?? 0;
   const shippingFee = totalAmount >= 30000 ? 0 : 3000;
@@ -102,8 +108,8 @@ export default function CheckoutPage() {
     }).open();
   }, []);
 
-  if (loading) return null;
-  if (!cart || cart.items.length === 0) { router.push('/cart'); return null; }
+  if (loading || !user || cart === null) return null;
+  if (cart.items.length === 0) return null;
 
   const update = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [field]: e.target.value });
