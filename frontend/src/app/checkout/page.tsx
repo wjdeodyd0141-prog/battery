@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Zap, MapPin, Coins } from 'lucide-react';
@@ -16,51 +16,79 @@ import { toast } from 'sonner';
 
 declare global {
   interface Window {
-    TossPayments: any;
+    PaymentWidget: any;
     daum: any;
   }
 }
 
 export default function CheckoutPage() {
-  const { cart, clearCart } = useCart();
+  const { cart } = useCart();
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [form, setForm] = useState({
-    receiverName: '', receiverPhone: '', shippingAddress: '',
-  });
+  const [form, setForm] = useState({ receiverName: '', receiverPhone: '', shippingAddress: '' });
   const [mileageBalance, setMileageBalance] = useState(0);
   const [mileageInput, setMileageInput] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [widgetReady, setWidgetReady] = useState(false);
+  const paymentWidgetRef = useRef<any>(null);
+  const paymentMethodsWidgetRef = useRef<any>(null);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
     if (!loading && user) {
-      setForm((f) => ({
-        ...f,
-        receiverName: user.name || '',
-        receiverPhone: user.phone || '',
-        shippingAddress: user.address || '',
-      }));
-      api.get<{ balance: number }>('/mileage/balance')
-        .then((r) => setMileageBalance(r.balance))
-        .catch(() => {});
+      setForm(f => ({ ...f, receiverName: user.name || '', receiverPhone: user.phone || '', shippingAddress: user.address || '' }));
+      api.get<{ balance: number }>('/mileage/balance').then(r => setMileageBalance(r.balance)).catch(() => {});
     }
   }, [user, loading]);
 
+  const totalAmount = cart?.items.reduce((sum, item) => sum + (item.product.price + (item.optionPrice ?? 0)) * item.quantity, 0) ?? 0;
+  const shippingFee = totalAmount >= 30000 ? 0 : 3000;
+  const orderTotal = totalAmount + shippingFee;
+  const mileageUsed = Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, orderTotal));
+  const finalAmount = orderTotal - mileageUsed;
+
+  // 결제위젯 초기화
   useEffect(() => {
-    const toss = document.createElement('script');
-    toss.src = 'https://js.tosspayments.com/v1/payment';
-    document.head.appendChild(toss);
+    if (!user || !cart || cart.items.length === 0) return;
 
     const daum = document.createElement('script');
     daum.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
     document.head.appendChild(daum);
 
+    const script = document.createElement('script');
+    script.src = 'https://js.tosspayments.com/v2/payment-widget';
+    script.async = true;
+    script.onload = async () => {
+      try {
+        const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || '';
+        const customerKey = user.id;
+        const widget = window.PaymentWidget(clientKey, customerKey);
+        paymentWidgetRef.current = widget;
+
+        const methodsWidget = await widget.renderPaymentMethods(
+          '#payment-methods',
+          { value: finalAmount },
+          { variantKey: 'DEFAULT' },
+        );
+        paymentMethodsWidgetRef.current = methodsWidget;
+        await widget.renderAgreement('#payment-agreement', { variantKey: 'AGREEMENT' });
+        setWidgetReady(true);
+      } catch {
+        toast.error('결제 수단을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+      }
+    };
+    document.head.appendChild(script);
+
     return () => {
-      document.head.removeChild(toss);
+      if (document.head.contains(script)) document.head.removeChild(script);
       if (document.head.contains(daum)) document.head.removeChild(daum);
     };
-  }, []);
+  }, [user?.id, cart?.items.length]);
+
+  // 금액 변경 시 위젯 업데이트
+  useEffect(() => {
+    paymentMethodsWidgetRef.current?.updateAmount(finalAmount);
+  }, [finalAmount]);
 
   const openAddressSearch = useCallback(() => {
     if (!window.daum?.Postcode) {
@@ -69,23 +97,13 @@ export default function CheckoutPage() {
     }
     new window.daum.Postcode({
       oncomplete(data: any) {
-        const fullAddress = data.roadAddress || data.jibunAddress;
-        setForm((f) => ({ ...f, shippingAddress: fullAddress }));
+        setForm(f => ({ ...f, shippingAddress: data.roadAddress || data.jibunAddress }));
       },
     }).open();
   }, []);
 
   if (loading) return null;
-  if (!cart || cart.items.length === 0) {
-    router.push('/cart');
-    return null;
-  }
-
-  const totalAmount = cart.items.reduce((sum, item) => sum + (item.product.price + (item.optionPrice ?? 0)) * item.quantity, 0);
-  const shippingFee = totalAmount >= 30000 ? 0 : 3000;
-  const orderTotal = totalAmount + shippingFee;
-  const mileageUsed = Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, orderTotal));
-  const finalAmount = orderTotal - mileageUsed;
+  if (!cart || cart.items.length === 0) { router.push('/cart'); return null; }
 
   const update = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [field]: e.target.value });
@@ -99,7 +117,7 @@ export default function CheckoutPage() {
     setProcessing(true);
     try {
       const order = await api.post<Order>('/orders', {
-        items: cart.items.map((i) => ({
+        items: cart.items.map(i => ({
           productId: i.productId,
           quantity: i.quantity,
           optionPrice: i.optionPrice ?? 0,
@@ -112,28 +130,26 @@ export default function CheckoutPage() {
         mileageUsed,
       });
 
-      // 마일리지로 전액 결제 시 Toss 결제 없이 완료
       if (finalAmount === 0) {
         await api.post(`/orders/${order.id}/complete-free`, {});
         router.push(`/checkout/success?orderId=${order.id}&free=1`);
         return;
       }
 
-      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || '';
-      const tossPayments = window.TossPayments(clientKey);
-
-      await tossPayments.requestPayment('카드', {
-        amount: finalAmount,
+      await paymentWidgetRef.current.requestPayment({
         orderId: order.id,
         orderName: cart.items.length === 1
           ? cart.items[0].product.name
           : `${cart.items[0].product.name} 외 ${cart.items.length - 1}건`,
         customerName: form.receiverName,
+        customerEmail: user?.email || '',
         successUrl: `${window.location.origin}/checkout/success`,
         failUrl: `${window.location.origin}/checkout/fail`,
       });
     } catch (err: any) {
-      toast.error(err.message || '결제 준비 중 오류가 발생했습니다.');
+      if (err.code !== 'USER_CANCEL') {
+        toast.error(err.message || '결제 중 오류가 발생했습니다.');
+      }
       setProcessing(false);
     }
   };
@@ -143,8 +159,9 @@ export default function CheckoutPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">결제</h1>
       <form onSubmit={handlePayment}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 배송 정보 */}
           <div className="lg:col-span-2 space-y-4">
+
+            {/* 배송 정보 */}
             <div className="bg-white rounded-xl border p-6">
               <h2 className="font-semibold text-gray-900 mb-4">배송 정보</h2>
               <div className="space-y-4">
@@ -161,24 +178,14 @@ export default function CheckoutPage() {
                 <div>
                   <Label htmlFor="shippingAddress">배송 주소 *</Label>
                   <div className="flex gap-2 mt-1">
-                    <Input
-                      id="shippingAddress"
-                      value={form.shippingAddress}
-                      readOnly
-                      placeholder="주소 검색 버튼을 눌러주세요"
-                      className="flex-1 bg-gray-50 cursor-pointer"
-                      onClick={openAddressSearch}
-                    />
+                    <Input id="shippingAddress" value={form.shippingAddress} readOnly placeholder="주소 검색 버튼을 눌러주세요" className="flex-1 bg-gray-50 cursor-pointer" onClick={openAddressSearch} />
                     <Button type="button" variant="outline" onClick={openAddressSearch} className="shrink-0 gap-1.5">
-                      <MapPin className="w-4 h-4" />
-                      주소 검색
+                      <MapPin className="w-4 h-4" />주소 검색
                     </Button>
                   </div>
                   {form.shippingAddress && (
-                    <Input
-                      className="mt-2"
-                      placeholder="상세 주소 (동, 호수 등)"
-                      onChange={(e) => setForm((f) => ({ ...f, shippingAddress: form.shippingAddress.split(' //')[0] + (e.target.value ? ` // ${e.target.value}` : '') }))}
+                    <Input className="mt-2" placeholder="상세 주소 (동, 호수 등)"
+                      onChange={e => setForm(f => ({ ...f, shippingAddress: f.shippingAddress.split(' //')[0] + (e.target.value ? ` // ${e.target.value}` : '') }))}
                     />
                   )}
                 </div>
@@ -189,12 +196,12 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-xl border p-6">
               <h2 className="font-semibold text-gray-900 mb-4">주문 상품</h2>
               <div className="space-y-3">
-                {cart.items.map((item) => (
+                {cart.items.map(item => (
                   <div key={item.id} className="flex items-center gap-3">
                     <div className="relative w-12 h-12 bg-gray-50 rounded-lg overflow-hidden border shrink-0">
-                      {item.product.imageUrls?.[0] ? (
-                        <Image src={item.product.imageUrls[0]} alt={item.product.name} fill className="object-contain p-1" />
-                      ) : <div className="absolute inset-0 flex items-center justify-center"><Zap className="w-6 h-6 text-gray-200" /></div>}
+                      {item.product.imageUrls?.[0]
+                        ? <Image src={item.product.imageUrls[0]} alt={item.product.name} fill className="object-contain p-1" />
+                        : <div className="absolute inset-0 flex items-center justify-center"><Zap className="w-6 h-6 text-gray-200" /></div>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium line-clamp-1">{item.product.name}</p>
@@ -205,6 +212,18 @@ export default function CheckoutPage() {
                 ))}
               </div>
             </div>
+
+            {/* 결제 위젯 */}
+            {finalAmount > 0 && (
+              <div className="bg-white rounded-xl border p-6">
+                <h2 className="font-semibold text-gray-900 mb-4">결제 수단</h2>
+                {!widgetReady && (
+                  <div className="flex items-center justify-center h-32 text-sm text-gray-400">결제 수단 불러오는 중...</div>
+                )}
+                <div id="payment-methods" />
+                <div id="payment-agreement" className="mt-2" />
+              </div>
+            )}
           </div>
 
           {/* 결제 요약 */}
@@ -221,7 +240,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* 마일리지 사용 */}
               {mileageBalance > 0 && (
                 <div className="mt-4 p-3 bg-emerald-50 rounded-xl">
                   <div className="flex items-center gap-1.5 mb-2">
@@ -230,28 +248,15 @@ export default function CheckoutPage() {
                     <span className="text-xs text-emerald-500 ml-auto">보유 {mileageBalance.toLocaleString()}원</span>
                   </div>
                   <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={Math.min(mileageBalance, orderTotal)}
-                      value={mileageInput}
-                      onChange={(e) => setMileageInput(e.target.value)}
-                      placeholder="0"
-                      className="h-8 text-sm bg-white"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
+                    <Input type="number" min={0} max={Math.min(mileageBalance, orderTotal)} value={mileageInput}
+                      onChange={e => setMileageInput(e.target.value)} placeholder="0" className="h-8 text-sm bg-white" />
+                    <Button type="button" variant="outline" size="sm"
                       className="shrink-0 text-emerald-600 border-emerald-300 hover:bg-emerald-50"
-                      onClick={() => setMileageInput(String(Math.min(mileageBalance, orderTotal)))}
-                    >
+                      onClick={() => setMileageInput(String(Math.min(mileageBalance, orderTotal)))}>
                       전액 사용
                     </Button>
                   </div>
-                  {mileageUsed > 0 && (
-                    <p className="text-xs text-emerald-600 mt-1.5">-{mileageUsed.toLocaleString()}원 할인 적용</p>
-                  )}
+                  {mileageUsed > 0 && <p className="text-xs text-emerald-600 mt-1.5">-{mileageUsed.toLocaleString()}원 할인 적용</p>}
                 </div>
               )}
 
@@ -260,8 +265,15 @@ export default function CheckoutPage() {
                 <span>최종 금액</span>
                 <span className="text-blue-600">{finalAmount.toLocaleString()}원</span>
               </div>
-              <Button type="submit" className="w-full h-12 bg-blue-600 hover:bg-blue-700 font-semibold text-base" disabled={processing}>
-                {processing ? '처리 중...' : finalAmount === 0 ? '마일리지로 무료 결제' : `${finalAmount.toLocaleString()}원 결제하기`}
+              <Button
+                type="submit"
+                className="w-full h-12 bg-blue-600 hover:bg-blue-700 font-semibold text-base"
+                disabled={processing || (finalAmount > 0 && !widgetReady)}
+              >
+                {processing ? '처리 중...'
+                  : finalAmount === 0 ? '마일리지로 무료 결제'
+                  : !widgetReady ? '로딩 중...'
+                  : `${finalAmount.toLocaleString()}원 결제하기`}
               </Button>
               <p className="text-xs text-center text-gray-400 mt-3">토스페이먼츠 보안 결제</p>
             </div>
