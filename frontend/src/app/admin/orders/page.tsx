@@ -232,7 +232,7 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
                     <XCircle className="w-4 h-4" /> 주문 취소
                   </button>
                 )}
-                {(order.status === 'DELIVERED' || order.status === 'PAID') && (
+                {(['PAID', 'PREPARING', 'SHIPPED', 'DELIVERED'] as OrderStatus[]).includes(order.status) && (
                   <button
                     onClick={() => setShowRefundDialog(true)}
                     disabled={changingStatus}
@@ -282,7 +282,7 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
                 />
                 <input
                   type="number"
-                  placeholder={`환불 금액 (비워두면 전액 ${order.totalAmount.toLocaleString()}원 환불)`}
+                  placeholder={`환불 금액 (비워두면 전액 ${(order.totalAmount - (order.mileageUsed ?? 0)).toLocaleString()}원 환불, 최대 결제금액 이하)`}
                   value={refundAmount}
                   onChange={e => setRefundAmount(e.target.value)}
                   min={1}

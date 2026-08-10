@@ -432,6 +432,21 @@ export class OrdersService {
           data: { stock: { increment: item.quantity } },
         });
       }
+      if (order.mileageUsed > 0) {
+        await tx.user.update({
+          where: { id: order.userId },
+          data: { mileageBalance: { increment: order.mileageUsed } },
+        });
+        await tx.mileageHistory.create({
+          data: {
+            userId: order.userId,
+            amount: order.mileageUsed,
+            type: 'EARN',
+            reason: `주문 환불 마일리지 환급 (#${orderId.slice(0, 8).toUpperCase()})`,
+            orderId,
+          },
+        });
+      }
       return tx.order.update({
         where: { id: orderId },
         data: { status: 'REFUNDED' },
