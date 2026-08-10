@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Zap, MapPin, Coins } from 'lucide-react';
+import { Zap, MapPin, Coins, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +30,7 @@ export default function CheckoutPage() {
   const [mileageInput, setMileageInput] = useState('');
   const [processing, setProcessing] = useState(false);
   const [widgetReady, setWidgetReady] = useState(false);
+  const [widgetError, setWidgetError] = useState(false);
   const paymentWidgetRef = useRef<any>(null);
   const paymentMethodsWidgetRef = useRef<any>(null);
 
@@ -40,7 +41,6 @@ export default function CheckoutPage() {
     api.get<{ balance: number }>('/mileage/balance').then(r => setMileageBalance(r.balance)).catch(() => {});
   }, [user, loading]);
 
-  // cart가 로드된 후에만 체크 — 렌더 중 redirect 방지
   useEffect(() => {
     if (!loading && user && cart !== null && cart.items.length === 0) {
       router.push('/cart');
@@ -64,6 +64,12 @@ export default function CheckoutPage() {
     const script = document.createElement('script');
     script.src = 'https://js.tosspayments.com/v2/payment-widget';
     script.async = true;
+
+    script.onerror = () => {
+      console.error('[TossWidget] 스크립트 로드 실패');
+      setWidgetError(true);
+    };
+
     script.onload = async () => {
       try {
         const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || '';
@@ -74,15 +80,16 @@ export default function CheckoutPage() {
         const methodsWidget = await widget.renderPaymentMethods(
           '#payment-methods',
           { value: finalAmount },
-          { variantKey: 'DEFAULT' },
         );
         paymentMethodsWidgetRef.current = methodsWidget;
-        await widget.renderAgreement('#payment-agreement', { variantKey: 'AGREEMENT' });
+        await widget.renderAgreement('#payment-agreement');
         setWidgetReady(true);
-      } catch {
-        toast.error('결제 수단을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+      } catch (err) {
+        console.error('[TossWidget] 초기화 오류:', err);
+        setWidgetError(true);
       }
     };
+
     document.head.appendChild(script);
 
     return () => {
@@ -223,9 +230,28 @@ export default function CheckoutPage() {
             {finalAmount > 0 && (
               <div className="bg-white rounded-xl border p-6">
                 <h2 className="font-semibold text-gray-900 mb-4">결제 수단</h2>
-                {!widgetReady && (
-                  <div className="flex items-center justify-center h-32 text-sm text-gray-400">결제 수단 불러오는 중...</div>
-                )}
+                {widgetError ? (
+                  <div className="flex flex-col items-center justify-center h-32 gap-3">
+                    <div className="flex items-center gap-2 text-red-500">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm">결제 수단을 불러오지 못했습니다.</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-gray-600"
+                      onClick={() => window.location.reload()}
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      새로고침
+                    </Button>
+                  </div>
+                ) : !widgetReady ? (
+                  <div className="flex items-center justify-center h-32 text-sm text-gray-400">
+                    결제 수단 불러오는 중...
+                  </div>
+                ) : null}
                 <div id="payment-methods" />
                 <div id="payment-agreement" className="mt-2" />
               </div>
@@ -274,10 +300,11 @@ export default function CheckoutPage() {
               <Button
                 type="submit"
                 className="w-full h-12 bg-blue-600 hover:bg-blue-700 font-semibold text-base"
-                disabled={processing || (finalAmount > 0 && !widgetReady)}
+                disabled={processing || (finalAmount > 0 && (!widgetReady || widgetError))}
               >
                 {processing ? '처리 중...'
                   : finalAmount === 0 ? '마일리지로 무료 결제'
+                  : widgetError ? '결제 수단 오류 (새로고침 필요)'
                   : !widgetReady ? '로딩 중...'
                   : `${finalAmount.toLocaleString()}원 결제하기`}
               </Button>
