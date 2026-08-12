@@ -158,7 +158,7 @@ export class OrdersService {
       include: { items: true },
     });
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
-    const expectedAmount = order.totalAmount - (order.mileageUsed ?? 0);
+    const expectedAmount = order.totalAmount - (order.mileageUsed ?? 0) - (order.couponDiscount ?? 0);
     if (expectedAmount !== amount) throw new BadRequestException('결제 금액이 일치하지 않습니다.');
 
     // 결제 확인 + 재고 차감을 트랜잭션으로 처리
@@ -191,8 +191,8 @@ export class OrdersService {
   async completeFreeOrder(orderId: string, userId: string) {
     const order = await this.prisma.order.findFirst({ where: { id: orderId, userId }, include: { items: true } });
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
-    const paymentAmount = order.totalAmount - (order.mileageUsed ?? 0);
-    if (paymentAmount !== 0) throw new BadRequestException('마일리지로 전액 결제된 주문이 아닙니다.');
+    const paymentAmount = order.totalAmount - (order.mileageUsed ?? 0) - (order.couponDiscount ?? 0);
+    if (paymentAmount !== 0) throw new BadRequestException('마일리지/쿠폰으로 전액 결제된 주문이 아닙니다.');
 
     return this.prisma.$transaction(async (tx) => {
       // 상태 변경을 트랜잭션 내부에서 원자적으로 처리 — 동시 요청 방지
