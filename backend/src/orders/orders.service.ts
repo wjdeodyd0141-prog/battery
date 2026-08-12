@@ -72,8 +72,7 @@ export class OrdersService {
       };
     });
 
-    // VULN-01: shippingFee도 서버에서 계산 (클라이언트 값 무시)
-    const shippingFee = itemsTotal >= 30000 ? 0 : 3000;
+    const shippingFee = 0;
     const totalAmount = itemsTotal + shippingFee;
 
     // 마일리지 검증 (음수·비정상값·주문금액 초과 방지)

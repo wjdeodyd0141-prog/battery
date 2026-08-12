@@ -49,7 +49,7 @@ export default function CheckoutPage() {
   }, [cart, loading, user]);
 
   const totalAmount = cart?.items.reduce((sum, item) => sum + (item.product.price + (item.optionPrice ?? 0)) * item.quantity, 0) ?? 0;
-  const shippingFee = totalAmount >= 30000 ? 0 : 3000;
+  const shippingFee = 0;
   const orderTotal = totalAmount + shippingFee;
   const mileageUsed = Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, orderTotal));
   const finalAmount = orderTotal - mileageUsed;
@@ -250,7 +250,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>배송비</span>
-                  <span className={shippingFee === 0 ? 'text-green-600 font-medium' : ''}>{shippingFee === 0 ? '무료' : `${shippingFee.toLocaleString()}원`}</span>
+                  <span className="text-green-600 font-medium">무료</span>
                 </div>
               </div>
 
