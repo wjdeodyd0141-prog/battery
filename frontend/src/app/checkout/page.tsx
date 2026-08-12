@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Zap, MapPin, Coins, CreditCard, Banknote } from 'lucide-react';
+import { Zap, MapPin, Coins, CreditCard, Banknote, Ticket, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,12 +36,16 @@ export default function CheckoutPage() {
   const [processing, setProcessing] = useState(false);
   const [tossReady, setTossReady] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState('카드');
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [selectedCoupon, setSelectedCoupon] = useState<any | null>(null);
+  const [couponOpen, setCouponOpen] = useState(false);
 
   useEffect(() => {
     if (loading) return;
     if (!user) { router.push('/login'); return; }
     setForm(f => ({ ...f, receiverName: user.name || '', receiverPhone: user.phone || '', shippingAddress: user.address || '' }));
     api.get<{ balance: number }>('/mileage/balance').then(r => setMileageBalance(r.balance)).catch(() => {});
+    api.get<any[]>('/coupons/my').then(list => setCoupons(list.filter((uc: any) => !uc.isUsed))).catch(() => {});
   }, [user, loading]);
 
   useEffect(() => {
@@ -51,8 +55,20 @@ export default function CheckoutPage() {
   const totalAmount = cart?.items.reduce((sum, item) => sum + (item.product.price + (item.optionPrice ?? 0)) * item.quantity, 0) ?? 0;
   const shippingFee = 0;
   const orderTotal = totalAmount + shippingFee;
-  const mileageUsed = Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, orderTotal));
-  const finalAmount = orderTotal - mileageUsed;
+
+  const couponDiscount = (() => {
+    if (!selectedCoupon) return 0;
+    const c = selectedCoupon.coupon;
+    if (c.discountType === 'PERCENT') {
+      const raw = Math.floor(orderTotal * c.discountValue / 100);
+      return c.maxDiscountAmount ? Math.min(raw, c.maxDiscountAmount) : raw;
+    }
+    return Math.min(Math.floor(c.discountValue), orderTotal);
+  })();
+
+  const afterCoupon = orderTotal - couponDiscount;
+  const mileageUsed = Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, afterCoupon));
+  const finalAmount = afterCoupon - mileageUsed;
 
   useEffect(() => {
     if (!user || !cart || cart.items.length === 0) return;
@@ -126,6 +142,7 @@ export default function CheckoutPage() {
         receiverPhone: form.receiverPhone,
         shippingFee,
         mileageUsed,
+        couponId: selectedCoupon?.id,
       });
 
       if (finalAmount === 0) {
@@ -252,7 +269,80 @@ export default function CheckoutPage() {
                   <span>배송비</span>
                   <span className="text-green-600 font-medium">무료</span>
                 </div>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-violet-600">
+                    <span>쿠폰 할인</span>
+                    <span className="font-medium">-{couponDiscount.toLocaleString()}원</span>
+                  </div>
+                )}
+                {mileageUsed > 0 && (
+                  <div className="flex justify-between text-emerald-600">
+                    <span>마일리지 할인</span>
+                    <span className="font-medium">-{mileageUsed.toLocaleString()}원</span>
+                  </div>
+                )}
               </div>
+
+              {coupons.length > 0 && (
+                <div className="mt-4 p-3 bg-violet-50 rounded-xl">
+                  <button
+                    type="button"
+                    className="w-full flex items-center gap-1.5"
+                    onClick={() => setCouponOpen(o => !o)}
+                  >
+                    <Ticket className="w-4 h-4 text-violet-500" />
+                    <span className="text-sm font-medium text-violet-700">쿠폰 사용</span>
+                    <span className="text-xs text-violet-500 ml-auto">{coupons.length}장 보유</span>
+                    {couponOpen ? <ChevronUp className="w-3 h-3 text-violet-400" /> : <ChevronDown className="w-3 h-3 text-violet-400" />}
+                  </button>
+                  {couponOpen && (
+                    <div className="mt-2 space-y-1.5">
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedCoupon(null); setMileageInput(''); }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-all ${
+                          !selectedCoupon ? 'border-violet-400 bg-violet-100 text-violet-700 font-medium' : 'border-gray-200 bg-white text-gray-500'
+                        }`}
+                      >
+                        쿠폰 사용 안함
+                      </button>
+                      {coupons.map((uc: any) => {
+                        const c = uc.coupon;
+                        const usable = orderTotal >= c.minOrderAmount;
+                        const discountLabel = c.discountType === 'PERCENT'
+                          ? `${c.discountValue}% 할인${c.maxDiscountAmount ? ` (최대 ${c.maxDiscountAmount.toLocaleString()}원)` : ''}`
+                          : `${Math.floor(c.discountValue).toLocaleString()}원 할인`;
+                        return (
+                          <button
+                            key={uc.id}
+                            type="button"
+                            disabled={!usable}
+                            onClick={() => { setSelectedCoupon(uc); setMileageInput(''); setCouponOpen(false); }}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-all ${
+                              selectedCoupon?.id === uc.id
+                                ? 'border-violet-400 bg-violet-100 text-violet-700 font-medium'
+                                : usable
+                                ? 'border-gray-200 bg-white text-gray-700 hover:border-violet-300'
+                                : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            <p className="font-medium">{c.name}</p>
+                            <p className="text-xs mt-0.5 opacity-75">{discountLabel}</p>
+                            {!usable && <p className="text-xs text-red-400 mt-0.5">최소 주문 {c.minOrderAmount.toLocaleString()}원 이상</p>}
+                            {c.expiresAt && <p className="text-xs opacity-60 mt-0.5">{new Date(c.expiresAt).toLocaleDateString()} 까지</p>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {selectedCoupon && !couponOpen && (
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-xs text-violet-700 font-medium">{selectedCoupon.coupon.name} 적용됨</p>
+                      <p className="text-xs text-violet-600 font-bold">-{couponDiscount.toLocaleString()}원</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {mileageBalance > 0 && (
                 <div className="mt-4 p-3 bg-emerald-50 rounded-xl">
@@ -262,11 +352,11 @@ export default function CheckoutPage() {
                     <span className="text-xs text-emerald-500 ml-auto">보유 {mileageBalance.toLocaleString()}원</span>
                   </div>
                   <div className="flex gap-2">
-                    <Input type="number" min={0} max={Math.min(mileageBalance, orderTotal)} value={mileageInput}
+                    <Input type="number" min={0} max={Math.min(mileageBalance, afterCoupon)} value={mileageInput}
                       onChange={e => setMileageInput(e.target.value)} placeholder="0" className="h-8 text-sm bg-white" />
                     <Button type="button" variant="outline" size="sm"
                       className="shrink-0 text-emerald-600 border-emerald-300 hover:bg-emerald-50"
-                      onClick={() => setMileageInput(String(Math.min(mileageBalance, orderTotal)))}>
+                      onClick={() => setMileageInput(String(Math.min(mileageBalance, afterCoupon)))}>
                       전액 사용
                     </Button>
                   </div>

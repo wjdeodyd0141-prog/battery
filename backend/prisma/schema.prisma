@@ -149,6 +149,8 @@ model Order {
   carrier         String?
   adminMemo         String?
   mileageUsed       Int         @default(0)
+  couponDiscount    Int         @default(0)
+  usedCouponId      String?
   returnStatus      String?
   returnType        String?
   returnReason      String?

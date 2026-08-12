@@ -19,6 +19,7 @@ export interface CreateOrderDto {
   receiverPhone: string;
   shippingFee?: number;
   mileageUsed?: number;
+  couponId?: string;
 }
 
 export interface OrderQueryDto {
@@ -75,20 +76,46 @@ export class OrdersService {
     const shippingFee = 0;
     const totalAmount = itemsTotal + shippingFee;
 
-    // 마일리지 검증 (음수·비정상값·주문금액 초과 방지)
+    // 마일리지 검증
     const rawMileage = dto.mileageUsed ?? 0;
     if (!Number.isFinite(rawMileage)) throw new BadRequestException('유효하지 않은 마일리지 값입니다.');
     const mileageUsed = Math.max(0, Math.floor(rawMileage));
     if (mileageUsed > totalAmount) throw new BadRequestException('마일리지 사용 금액이 주문 금액을 초과합니다.');
 
-    // 주문 생성 + 마일리지 차감을 단일 트랜잭션으로 처리
-    // (주문이 생성된 뒤 차감 실패 시 mileageUsed가 DB에 남아 무료결제에 악용되는 것을 방지)
+    // 쿠폰 검증 및 할인 계산 (트랜잭션 외부에서 미리 조회)
+    let couponDiscount = 0;
+    let userCouponId: string | null = null;
+    if (dto.couponId) {
+      const userCoupon = await this.prisma.userCoupon.findFirst({
+        where: { id: dto.couponId, userId, isUsed: false },
+        include: { coupon: true },
+      });
+      if (!userCoupon) throw new BadRequestException('유효하지 않은 쿠폰입니다.');
+      const coupon = userCoupon.coupon;
+      if (!coupon.isActive) throw new BadRequestException('비활성화된 쿠폰입니다.');
+      if (coupon.expiresAt && coupon.expiresAt < new Date()) throw new BadRequestException('만료된 쿠폰입니다.');
+      if (totalAmount < coupon.minOrderAmount) throw new BadRequestException(`최소 주문 금액 ${coupon.minOrderAmount.toLocaleString()}원 이상 시 사용 가능합니다.`);
+
+      if (coupon.discountType === 'PERCENT') {
+        const raw = Math.floor(totalAmount * coupon.discountValue / 100);
+        couponDiscount = coupon.maxDiscountAmount ? Math.min(raw, coupon.maxDiscountAmount) : raw;
+      } else {
+        couponDiscount = Math.min(Math.floor(coupon.discountValue), totalAmount);
+      }
+      userCouponId = userCoupon.id;
+    }
+
+    const amountAfterDiscounts = totalAmount - couponDiscount;
+    if (mileageUsed > amountAfterDiscounts) throw new BadRequestException('마일리지 사용 금액이 주문 금액을 초과합니다.');
+
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.order.create({
         data: {
           userId,
           totalAmount,
           mileageUsed,
+          couponDiscount,
+          usedCouponId: userCouponId ?? undefined,
           shippingAddress: dto.shippingAddress,
           receiverName: dto.receiverName,
           receiverPhone: dto.receiverPhone,
@@ -111,6 +138,13 @@ export class OrdersService {
             reason: `결제 사용 (#${order.id.slice(0, 8).toUpperCase()})`,
             orderId: order.id,
           },
+        });
+      }
+
+      if (userCouponId) {
+        await tx.userCoupon.update({
+          where: { id: userCouponId },
+          data: { isUsed: true, usedAt: new Date() },
         });
       }
 
