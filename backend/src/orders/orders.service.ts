@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, HttpException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { MileageService } from '../mileage/mileage.service';
@@ -40,6 +40,15 @@ export class OrdersService {
   ) {}
 
   async createOrder(userId: string, dto: CreateOrderDto) {
+    try {
+      return await this._createOrderInternal(userId, dto);
+    } catch (err: any) {
+      if (err instanceof HttpException) throw err;
+      throw new BadRequestException(`주문 생성 오류: ${err?.message ?? String(err)}`);
+    }
+  }
+
+  private async _createOrderInternal(userId: string, dto: CreateOrderDto) {
     // VULN-01: 상품과 옵션 정보를 DB에서 직접 조회
     const products = await this.prisma.product.findMany({
       where: { id: { in: dto.items.map(i => i.productId) } },
@@ -150,7 +159,7 @@ export class OrdersService {
 
       return order;
     });
-  }
+  }  // end _createOrderInternal
 
   async confirmPayment(orderId: string, paymentKey: string, amount: number) {
     const order = await this.prisma.order.findUnique({
