@@ -141,13 +141,6 @@ export class OrdersService {
         });
       }
 
-      if (userCouponId) {
-        await tx.userCoupon.update({
-          where: { id: userCouponId },
-          data: { isUsed: true, usedAt: new Date() },
-        });
-      }
-
       return order;
     });
   }
@@ -161,23 +154,24 @@ export class OrdersService {
     const expectedAmount = order.totalAmount - (order.mileageUsed ?? 0) - (order.couponDiscount ?? 0);
     if (expectedAmount !== amount) throw new BadRequestException('결제 금액이 일치하지 않습니다.');
 
-    // 결제 확인 + 재고 차감을 트랜잭션으로 처리
     return this.prisma.$transaction(async (tx) => {
-      // 재고 차감 (atomic: stock >= quantity 조건 만족할 때만 차감)
       for (const item of order.items) {
         const updated = await tx.product.updateMany({
           where: { id: item.productId, stock: { gte: item.quantity } },
           data: { stock: { decrement: item.quantity } },
         });
-        if (updated.count === 0) {
-          throw new BadRequestException('재고가 부족합니다.');
-        }
+        if (updated.count === 0) throw new BadRequestException('재고가 부족합니다.');
       }
 
-      // 장바구니 비우기
       const cart = await tx.cart.findUnique({ where: { userId: order.userId } });
-      if (cart) {
-        await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+      if (cart) await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+      // 결제 완료 시점에 쿠폰 소비 처리
+      if (order.usedCouponId) {
+        await tx.userCoupon.update({
+          where: { id: order.usedCouponId },
+          data: { isUsed: true, usedAt: new Date() },
+        });
       }
 
       return tx.order.update({
@@ -211,6 +205,14 @@ export class OrdersService {
       }
       const cart = await tx.cart.findUnique({ where: { userId: order.userId } });
       if (cart) await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+      if (order.usedCouponId) {
+        await tx.userCoupon.update({
+          where: { id: order.usedCouponId },
+          data: { isUsed: true, usedAt: new Date() },
+        });
+      }
+
       return tx.order.findUnique({
         where: { id: orderId },
         include: { items: { include: { product: true } } },
