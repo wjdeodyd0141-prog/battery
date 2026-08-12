@@ -269,6 +269,10 @@ export class OrdersService {
       }
     }
 
+    const earnedHistory = await this.prisma.mileageHistory.findFirst({
+      where: { orderId, type: 'EARN', reason: { startsWith: '구매 적립' } },
+    });
+
     return this.prisma.$transaction(async (tx) => {
       for (const item of order.items) {
         await tx.product.update({
@@ -287,6 +291,21 @@ export class OrdersService {
             amount: order.mileageUsed,
             type: 'EARN',
             reason: `주문 취소 마일리지 환급 (#${orderId.slice(0, 8).toUpperCase()})`,
+            orderId,
+          },
+        });
+      }
+      if (earnedHistory && earnedHistory.amount > 0) {
+        await tx.user.update({
+          where: { id: order.userId },
+          data: { mileageBalance: { decrement: earnedHistory.amount } },
+        });
+        await tx.mileageHistory.create({
+          data: {
+            userId: order.userId,
+            amount: -earnedHistory.amount,
+            type: 'ADMIN',
+            reason: `취소로 인한 구매 적립 회수 (#${orderId.slice(0, 8).toUpperCase()})`,
             orderId,
           },
         });
@@ -424,6 +443,10 @@ export class OrdersService {
       throw new BadRequestException(err.message || '토스페이먼츠 환불 요청에 실패했습니다.');
     }
 
+    const earnedHistory = await this.prisma.mileageHistory.findFirst({
+      where: { orderId, type: 'EARN', reason: { startsWith: '구매 적립' } },
+    });
+
     return this.prisma.$transaction(async (tx) => {
       for (const item of order.items) {
         await tx.product.update({
@@ -442,6 +465,21 @@ export class OrdersService {
             amount: order.mileageUsed,
             type: 'EARN',
             reason: `주문 환불 마일리지 환급 (#${orderId.slice(0, 8).toUpperCase()})`,
+            orderId,
+          },
+        });
+      }
+      if (earnedHistory && earnedHistory.amount > 0) {
+        await tx.user.update({
+          where: { id: order.userId },
+          data: { mileageBalance: { decrement: earnedHistory.amount } },
+        });
+        await tx.mileageHistory.create({
+          data: {
+            userId: order.userId,
+            amount: -earnedHistory.amount,
+            type: 'ADMIN',
+            reason: `환불로 인한 구매 적립 회수 (#${orderId.slice(0, 8).toUpperCase()})`,
             orderId,
           },
         });
