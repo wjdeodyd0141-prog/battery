@@ -28,8 +28,7 @@ export default function CartPage() {
     (sum, item) => sum + (item.product.price + (item.optionPrice ?? 0)) * item.quantity,
     0
   ) ?? 0;
-  const SHIPPING_THRESHOLD = 30000;
-  const shippingFee = totalAmount >= SHIPPING_THRESHOLD ? 0 : 3000;
+  const shippingFee = 0;
 
   const handleUpdate = async (itemId: string, quantity: number) => {
     try { await updateItem(itemId, quantity); }
@@ -130,15 +129,9 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>배송비</span>
-                <span className={shippingFee === 0 ? 'text-green-600 font-medium' : ''}>
-                  {shippingFee === 0 ? '무료' : `${shippingFee.toLocaleString()}원`}
+                <span className="text-green-600 font-medium">무료
                 </span>
               </div>
-              {totalAmount < SHIPPING_THRESHOLD && (
-                <p className="text-xs text-blue-500">
-                  {(SHIPPING_THRESHOLD - totalAmount).toLocaleString()}원 더 담으면 무료 배송!
-                </p>
-              )}
             </div>
             <Separator className="my-4" />
             <div className="flex justify-between font-bold text-lg mb-5">
