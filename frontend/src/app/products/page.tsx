@@ -47,11 +47,12 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     : 30;
   const page = Math.max(1, Number(searchParams.page) || 1);
 
-  const [data, categories] = await Promise.all([
+  const [data, categories, mileageData] = await Promise.all([
     getProducts(searchParams.categoryId, searchParams.search, searchParams.sort, page, perPage).catch(() => ({
       products: [], total: 0, totalPages: 1, page: 1, limit: perPage,
     })),
     getCategories().catch(() => []),
+    api.get<{ rate: number }>('/mileage/rate').catch(() => ({ rate: 0 })),
   ]);
 
   const activeCategory = categories.find((c) => c.id === searchParams.categoryId);
@@ -84,7 +85,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-4">
                   {data.products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard key={product.id} product={product} defaultMileageRate={mileageData.rate} />
                   ))}
                 </div>
                 <Suspense>

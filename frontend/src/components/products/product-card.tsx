@@ -13,9 +13,10 @@ import { toast } from 'sonner';
 
 interface Props {
   product: Product;
+  defaultMileageRate?: number;
 }
 
-export default function ProductCard({ product }: Props) {
+export default function ProductCard({ product, defaultMileageRate }: Props) {
   const { addItem } = useCart();
   const { user } = useAuth();
   const router = useRouter();
@@ -77,9 +78,7 @@ export default function ProductCard({ product }: Props) {
           <div>
             <span className="font-bold text-gray-900 text-base">{product.price.toLocaleString()}</span>
             <span className="text-xs text-gray-500 ml-0.5">원</span>
-            {product.mileageRate != null && (
-              <p className="text-[11px] text-emerald-600 font-medium mt-0.5">{product.mileageRate}% 적립</p>
-            )}
+            {(() => { const r = product.mileageRate ?? defaultMileageRate; return r != null && r > 0 ? <p className="text-[11px] text-emerald-600 font-medium mt-0.5">{r}% 적립</p> : null; })()}
           </div>
           <Button
             size="sm"

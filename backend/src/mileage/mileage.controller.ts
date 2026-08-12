@@ -8,6 +8,11 @@ import { Roles } from '../auth/decorators/roles.decorator';
 export class MileageController {
   constructor(private mileageService: MileageService) {}
 
+  @Get('mileage/rate')
+  getPublicRate() {
+    return this.mileageService.getDefaultRate().then(rate => ({ rate }));
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('mileage/balance')
   getBalance(@Request() req) {

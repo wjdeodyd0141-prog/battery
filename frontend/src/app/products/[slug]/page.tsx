@@ -42,8 +42,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {
-  const product = await getProduct(params.slug);
+  const [product, mileageData] = await Promise.all([
+    getProduct(params.slug),
+    api.get<{ rate: number }>('/mileage/rate').catch(() => ({ rate: 0 })),
+  ]);
   if (!product) return notFound();
+  const effectiveMileageRate = product.mileageRate ?? mileageData.rate;
 
   const avgRating = product.reviews?.length
     ? (product.reviews.reduce((s, r) => s + r.rating, 0) / product.reviews.length).toFixed(1)
@@ -113,12 +117,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
               <span className="text-lg text-gray-500 ml-1">원</span>
             </div>
 
-            {product.mileageRate != null && (
+            {effectiveMileageRate > 0 && (
               <div className="flex items-center gap-2 bg-emerald-50 rounded-xl px-4 py-2.5">
                 <Coins className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span className="text-sm text-emerald-700">
-                  구매 시 <strong className="text-emerald-600">{Math.floor(product.price * product.mileageRate / 100).toLocaleString()}원</strong> 마일리지 적립
-                  <span className="text-emerald-400 ml-1">({product.mileageRate}%)</span>
+                  구매 시 <strong className="text-emerald-600">{Math.floor(product.price * effectiveMileageRate / 100).toLocaleString()}원</strong> 마일리지 적립
+                  <span className="text-emerald-400 ml-1">({effectiveMileageRate}%)</span>
                 </span>
               </div>
             )}
