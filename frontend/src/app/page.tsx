@@ -66,7 +66,12 @@ const FEATURES = [
 ];
 
 export default async function HomePage() {
-  const [products, categories, hero] = await Promise.all([getFeaturedProducts(), getCategories(), getHeroSettings()]);
+  const [products, categories, hero, mileageData] = await Promise.all([
+    getFeaturedProducts(),
+    getCategories(),
+    getHeroSettings(),
+    api.get<{ rate: number }>('/mileage/rate').catch(() => ({ rate: 0 })),
+  ]);
 
   return (
     <div className="overflow-x-hidden">
@@ -203,7 +208,7 @@ export default async function HomePage() {
           {products.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} defaultMileageRate={mileageData.rate} />
               ))}
             </div>
           ) : (
