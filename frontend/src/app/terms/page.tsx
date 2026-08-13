@@ -1,3 +1,10 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '이용약관',
+  description: '파워뱅크 전시장 이용약관입니다.',
+};
+
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12">

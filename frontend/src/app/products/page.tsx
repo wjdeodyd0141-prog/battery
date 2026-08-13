@@ -1,4 +1,12 @@
 export const revalidate = 60;
+export const metadata = {
+  title: '전체 상품',
+  description: '파워뱅크 전시장의 전체 배터리 상품을 확인하세요. 리튬, 알카라인, 충전용 배터리까지 국내외 최고 브랜드 제품을 합리적인 가격에 만나보세요.',
+  openGraph: {
+    title: '전체 상품 | 파워뱅크 전시장',
+    description: '파워뱅크 전시장의 전체 배터리 상품을 확인하세요.',
+  },
+};
 
 import { Suspense } from 'react';
 import { api } from '@/lib/api';

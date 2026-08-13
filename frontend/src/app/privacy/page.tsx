@@ -1,3 +1,10 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '개인정보처리방침',
+  description: '파워뱅크 전시장 개인정보처리방침입니다.',
+};
+
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
