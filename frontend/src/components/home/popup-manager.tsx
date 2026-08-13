@@ -40,7 +40,7 @@ function FloatingPopup({
   const widthClass = popup.size === 'LG' ? 'w-[500px]' : popup.size === 'MD' ? 'w-96' : 'w-64';
 
   return (
-    <div className={`${widthClass} bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 flex flex-col`}>
+    <div className={`${widthClass} max-h-[85vh] bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 flex flex-col pointer-events-auto`}>
       {/* 닫기 버튼 */}
       <div className="flex items-center justify-between px-3 py-2 bg-gray-800">
         <span className="text-xs text-gray-300 font-medium truncate">{popup.title}</span>
@@ -49,19 +49,19 @@ function FloatingPopup({
         </button>
       </div>
 
-      {/* 이미지 */}
-      {imageBlock && (
-        popup.linkUrl
-          ? <Link href={popup.linkUrl} target="_blank" rel="noopener noreferrer">{imageBlock}</Link>
-          : imageBlock
-      )}
-
-      {/* 텍스트 내용 */}
-      {popup.content && (
-        <div className="px-3 py-2.5 flex-1">
-          <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">{popup.content}</p>
-        </div>
-      )}
+      {/* 이미지 + 텍스트 (스크롤 영역) */}
+      <div className="overflow-y-auto flex-1">
+        {imageBlock && (
+          popup.linkUrl
+            ? <Link href={popup.linkUrl} target="_blank" rel="noopener noreferrer">{imageBlock}</Link>
+            : imageBlock
+        )}
+        {popup.content && (
+          <div className="px-3 py-2.5">
+            <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">{popup.content}</p>
+          </div>
+        )}
+      </div>
 
       {/* 하단 */}
       <div className="flex items-center justify-between border-t border-gray-100 px-3 py-2 bg-gray-50">
@@ -107,7 +107,7 @@ export default function PopupManager() {
   if (popups.length === 0) return null;
 
   return (
-    <div className="fixed top-[35%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 flex items-start gap-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center gap-3 p-4 pointer-events-none">
       {popups.map(popup => (
         <FloatingPopup
           key={popup.id}
