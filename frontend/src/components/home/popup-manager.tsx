@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { Popup } from '@/lib/types';
@@ -34,9 +33,8 @@ function FloatingPopup({
   onDismissToday: () => void;
 }) {
   const imageBlock = popup.imageUrl ? (
-    <div className="relative w-full aspect-[4/3] bg-gray-100">
-      <Image src={popup.imageUrl} alt={popup.title} fill className="object-contain" />
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={popup.imageUrl} alt={popup.title} className="w-full block" />
   ) : null;
 
   const widthClass = popup.size === 'LG' ? 'w-[500px]' : popup.size === 'MD' ? 'w-96' : 'w-64';
