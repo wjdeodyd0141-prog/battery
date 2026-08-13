@@ -7,6 +7,7 @@ export interface CreatePopupDto {
   content?: string;
   linkUrl?: string;
   isActive?: boolean;
+  size?: string;
   startAt?: string;
   endAt?: string;
 }
@@ -49,6 +50,7 @@ export class PopupsService {
         content: dto.content,
         linkUrl: dto.linkUrl,
         isActive: dto.isActive ?? true,
+        size: dto.size ?? 'SM',
         startAt: dto.startAt ? new Date(dto.startAt) : null,
         endAt: dto.endAt ? new Date(dto.endAt) : null,
       },

@@ -39,8 +39,10 @@ function FloatingPopup({
     </div>
   ) : null;
 
+  const widthClass = popup.size === 'LG' ? 'w-[500px]' : popup.size === 'MD' ? 'w-96' : 'w-64';
+
   return (
-    <div className="w-64 bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 flex flex-col">
+    <div className={`${widthClass} bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 flex flex-col`}>
       {/* 닫기 버튼 */}
       <div className="flex items-center justify-between px-3 py-2 bg-gray-800">
         <span className="text-xs text-gray-300 font-medium truncate">{popup.title}</span>

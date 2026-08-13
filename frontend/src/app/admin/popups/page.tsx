@@ -31,6 +31,7 @@ const EMPTY_FORM = {
   content: '',
   linkUrl: '',
   isActive: true,
+  size: 'SM',
   startAt: '',
   endAt: '',
 };
@@ -51,6 +52,7 @@ function PopupFormModal({
     content: initial?.content ?? '',
     linkUrl: initial?.linkUrl ?? '',
     isActive: initial?.isActive ?? true,
+    size: initial?.size ?? 'SM',
     startAt: toInputDate(initial?.startAt ?? null),
     endAt: toInputDate(initial?.endAt ?? null),
   });
@@ -83,6 +85,7 @@ function PopupFormModal({
         content: form.content || undefined,
         linkUrl: form.linkUrl || undefined,
         isActive: form.isActive,
+        size: form.size,
         startAt: form.startAt || undefined,
         endAt: form.endAt || undefined,
       };
@@ -168,6 +171,32 @@ function PopupFormModal({
               placeholder="https://... 또는 /products"
               className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-400"
             />
+          </div>
+
+          {/* 팝업 크기 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">팝업 크기</label>
+            <div className="flex gap-2">
+              {[
+                { value: 'SM', label: '소', desc: '256px' },
+                { value: 'MD', label: '중', desc: '384px' },
+                { value: 'LG', label: '대', desc: '500px' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => set('size', opt.value)}
+                  className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                    form.size === opt.value
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <span className="block font-semibold">{opt.label}</span>
+                  <span className="block text-xs text-gray-400 font-normal">{opt.desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* 노출 기간 */}
@@ -348,6 +377,10 @@ export default function AdminPopupsPage() {
                     {/* 상태 뱃지 */}
                     <div className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-semibold ${st.color} ${st.bg}`}>
                       {st.label}
+                    </div>
+                    {/* 크기 뱃지 */}
+                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-semibold text-gray-600 bg-white/80">
+                      {popup.size === 'LG' ? '대' : popup.size === 'MD' ? '중' : '소'}
                     </div>
                   </div>
 

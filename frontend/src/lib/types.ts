@@ -190,6 +190,7 @@ export interface Popup {
   content: string | null;
   linkUrl: string | null;
   isActive: boolean;
+  size: string;
   startAt: string | null;
   endAt: string | null;
   createdAt: string;

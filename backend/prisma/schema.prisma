@@ -274,6 +274,7 @@ model Popup {
   content   String?
   linkUrl   String?
   isActive  Boolean   @default(true)
+  size      String    @default("SM")
   startAt   DateTime?
   endAt     DateTime?
   createdAt DateTime  @default(now())
