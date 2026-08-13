@@ -81,13 +81,13 @@ function PopupFormModal({
     try {
       const payload = {
         title: form.title,
-        imageUrl: form.imageUrl || undefined,
-        content: form.content || undefined,
-        linkUrl: form.linkUrl || undefined,
+        imageUrl: form.imageUrl || null,
+        content: form.content || null,
+        linkUrl: form.linkUrl || null,
         isActive: form.isActive,
         size: form.size,
-        startAt: form.startAt || undefined,
-        endAt: form.endAt || undefined,
+        startAt: form.startAt || null,
+        endAt: form.endAt || null,
       };
       const result = initial
         ? await api.patch<Popup>(`/popups/${initial.id}`, payload)

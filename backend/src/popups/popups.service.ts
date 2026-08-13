@@ -3,13 +3,13 @@ import { PrismaService } from '../prisma/prisma.service';
 
 export interface CreatePopupDto {
   title: string;
-  imageUrl?: string;
-  content?: string;
-  linkUrl?: string;
+  imageUrl?: string | null;
+  content?: string | null;
+  linkUrl?: string | null;
   isActive?: boolean;
   size?: string;
-  startAt?: string;
-  endAt?: string;
+  startAt?: string | null;
+  endAt?: string | null;
 }
 
 @Injectable()
