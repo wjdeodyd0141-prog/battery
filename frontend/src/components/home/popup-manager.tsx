@@ -35,7 +35,7 @@ function FloatingPopup({
 }) {
   const imageBlock = popup.imageUrl ? (
     <div className="relative w-full aspect-[4/3] bg-gray-100">
-      <Image src={popup.imageUrl} alt={popup.title} fill className="object-cover" />
+      <Image src={popup.imageUrl} alt={popup.title} fill className="object-contain" />
     </div>
   ) : null;
 
