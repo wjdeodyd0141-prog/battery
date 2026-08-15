@@ -66,8 +66,10 @@ export default function CheckoutPage() {
     return Math.min(Math.floor(c.discountValue), orderTotal);
   })();
 
+  const MILEAGE_MIN_ORDER = 50000;
+  const mileageAvailable = orderTotal >= MILEAGE_MIN_ORDER;
   const afterCoupon = orderTotal - couponDiscount;
-  const mileageUsed = Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, afterCoupon));
+  const mileageUsed = mileageAvailable ? Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, afterCoupon)) : 0;
   const finalAmount = afterCoupon - mileageUsed;
 
   useEffect(() => {
@@ -351,16 +353,22 @@ export default function CheckoutPage() {
                     <span className="text-sm font-medium text-emerald-700">마일리지 사용</span>
                     <span className="text-xs text-emerald-500 ml-auto">보유 {mileageBalance.toLocaleString()}원</span>
                   </div>
-                  <div className="flex gap-2">
-                    <Input type="number" min={0} max={Math.min(mileageBalance, afterCoupon)} value={mileageInput}
-                      onChange={e => setMileageInput(e.target.value)} placeholder="0" className="h-8 text-sm bg-white" />
-                    <Button type="button" variant="outline" size="sm"
-                      className="shrink-0 text-emerald-600 border-emerald-300 hover:bg-emerald-50"
-                      onClick={() => setMileageInput(String(Math.min(mileageBalance, afterCoupon)))}>
-                      전액 사용
-                    </Button>
-                  </div>
-                  {mileageUsed > 0 && <p className="text-xs text-emerald-600 mt-1.5">-{mileageUsed.toLocaleString()}원 할인 적용</p>}
+                  {mileageAvailable ? (
+                    <>
+                      <div className="flex gap-2">
+                        <Input type="number" min={0} max={Math.min(mileageBalance, afterCoupon)} value={mileageInput}
+                          onChange={e => setMileageInput(e.target.value)} placeholder="0" className="h-8 text-sm bg-white" />
+                        <Button type="button" variant="outline" size="sm"
+                          className="shrink-0 text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+                          onClick={() => setMileageInput(String(Math.min(mileageBalance, afterCoupon)))}>
+                          전액 사용
+                        </Button>
+                      </div>
+                      {mileageUsed > 0 && <p className="text-xs text-emerald-600 mt-1.5">-{mileageUsed.toLocaleString()}원 할인 적용</p>}
+                    </>
+                  ) : (
+                    <p className="text-xs text-gray-400">5만원 이상 구매 시 사용 가능합니다</p>
+                  )}
                 </div>
               )}
 
