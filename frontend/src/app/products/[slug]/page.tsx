@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import Image from 'next/image';
 import sanitizeHtml from 'sanitize-html';
-import { Zap, Star, Package, Coins } from 'lucide-react';
+import { Zap, Star, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { api } from '@/lib/api';
@@ -117,15 +117,6 @@ export default async function ProductDetailPage({ params }: PageProps) {
               <span className="text-lg text-gray-500 ml-1">원</span>
             </div>
 
-            {effectiveMileageRate > 0 && (
-              <div className="flex items-center gap-2 bg-emerald-50 rounded-xl px-4 py-2.5">
-                <Coins className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span className="text-sm text-emerald-700">
-                  구매 시 <strong className="text-emerald-600">{Math.floor(product.price * effectiveMileageRate / 100).toLocaleString()}원</strong> 마일리지 적립
-                  <span className="text-emerald-400 ml-1">({effectiveMileageRate}%)</span>
-                </span>
-              </div>
-            )}
 
             <div className="flex items-center gap-2 text-sm bg-gray-50 rounded-xl px-4 py-2.5">
               <Package className="w-4 h-4 text-gray-400" />
@@ -151,7 +142,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
               <p>✓ <span className="text-gray-600">오후 3시 이전 주문 시 당일 발송</span></p>
             </div>
 
-            <AddToCartButton product={product} />
+            <AddToCartButton product={product} mileageRate={effectiveMileageRate} />
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ShoppingCart, Minus, Plus, Check } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Check, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Product, SelectedOption } from '@/lib/types';
@@ -12,9 +12,10 @@ import { toast } from 'sonner';
 
 interface Props {
   product: Product;
+  mileageRate?: number;
 }
 
-export default function AddToCartButton({ product }: Props) {
+export default function AddToCartButton({ product, mileageRate = 0 }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [selections, setSelections] = useState<Record<string, string>>({});
@@ -130,6 +131,17 @@ export default function AddToCartButton({ product }: Props) {
         </div>
         <span className="text-sm text-gray-400">최대 {product.stock}개</span>
       </div>
+
+      {/* 마일리지 적립 안내 */}
+      {mileageRate > 0 && (
+        <div className="flex items-center gap-2 bg-emerald-50 rounded-xl px-4 py-2.5">
+          <Coins className="w-4 h-4 text-emerald-500 shrink-0" />
+          <span className="text-sm text-emerald-700">
+            구매 시 <strong className="text-emerald-600">{Math.floor(totalItemPrice * quantity * mileageRate / 100).toLocaleString()}원</strong> 마일리지 적립
+            <span className="text-emerald-400 ml-1">({mileageRate}%)</span>
+          </span>
+        </div>
+      )}
 
       {/* 금액 요약 */}
       <div className="bg-gray-50 rounded-xl px-4 py-3 space-y-1.5">
