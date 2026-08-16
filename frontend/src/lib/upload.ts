@@ -1,4 +1,4 @@
-import { getApiBaseUrl, getMemoryToken } from './api';
+import { getApiBaseUrl, getMemoryToken, setMemoryToken } from './api';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -24,6 +24,34 @@ export async function compressImage(file: File, maxWidth = 1200): Promise<Blob> 
   });
 }
 
+async function doUpload(formData: FormData, endpoint: string): Promise<Response> {
+  const token = getMemoryToken();
+  const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+  return fetch(`${getApiBaseUrl()}${endpoint}`, {
+    method: 'POST',
+    body: formData,
+    credentials: 'include',
+    headers,
+  });
+}
+
+async function tryRefreshToken(): Promise<boolean> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (data.accessToken) setMemoryToken(data.accessToken);
+    }
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function uploadImage(file: File, folder: string, maxWidth = 1200): Promise<string> {
   if (file.size > MAX_FILE_SIZE) throw new Error('파일 크기가 5MB를 초과합니다.');
 
@@ -36,15 +64,15 @@ export async function uploadImage(file: File, folder: string, maxWidth = 1200): 
 
   const endpoint = folder === 'reviews' ? '/upload/image/review' : '/upload/image';
 
-  const token = getMemoryToken();
-  const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+  let res = await doUpload(formData, endpoint);
 
-  const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
-    method: 'POST',
-    body: formData,
-    credentials: 'include',
-    headers,
-  });
+  // 401 시 토큰 갱신 후 1회 재시도
+  if (res.status === 401) {
+    const refreshed = await tryRefreshToken();
+    if (refreshed) {
+      res = await doUpload(formData, endpoint);
+    }
+  }
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: '업로드 실패' }));
