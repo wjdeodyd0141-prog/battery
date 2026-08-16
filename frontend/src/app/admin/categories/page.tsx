@@ -3,18 +3,20 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Trash2, Tag, ChevronUp, ChevronDown, Pencil, Check, X, Save, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Tag, ChevronUp, ChevronDown, Pencil, Check, X, Save, RotateCcw, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { Category } from '@/lib/types';
+import { uploadImage } from '@/lib/upload';
 import { toast } from 'sonner';
 
 interface EditForm {
   name: string;
   slug: string;
   description: string;
+  imageUrl: string;
 }
 
 export default function AdminCategoriesPage() {
@@ -23,11 +25,13 @@ export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [originalOrder, setOriginalOrder] = useState<Category[]>([]);
   const [orderChanged, setOrderChanged] = useState(false);
-  const [form, setForm] = useState({ name: '', slug: '', description: '' });
+  const [form, setForm] = useState({ name: '', slug: '', description: '', imageUrl: '' });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [editUploading, setEditUploading] = useState(false);
   const [orderSaving, setOrderSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({ name: '', slug: '', description: '' });
+  const [editForm, setEditForm] = useState<EditForm>({ name: '', slug: '', description: '', imageUrl: '' });
   const [editSaving, setEditSaving] = useState(false);
 
   const load = () =>
@@ -42,15 +46,30 @@ export default function AdminCategoriesPage() {
     if (user) load();
   }, [user, loading]);
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'create' | 'edit') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    target === 'create' ? setUploading(true) : setEditUploading(true);
+    try {
+      const url = await uploadImage(file, 'categories');
+      if (target === 'create') setForm(f => ({ ...f, imageUrl: url }));
+      else setEditForm(f => ({ ...f, imageUrl: url }));
+    } catch (err: any) {
+      toast.error(err.message ?? '이미지 업로드 실패');
+    } finally {
+      target === 'create' ? setUploading(false) : setEditUploading(false);
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) { toast.error('카테고리 이름을 입력해주세요.'); return; }
     if (!form.slug.trim()) { toast.error('슬러그를 입력해주세요.'); return; }
     setSaving(true);
     try {
-      await api.post('/categories', form);
+      await api.post('/categories', { ...form, imageUrl: form.imageUrl || null });
       toast.success('카테고리가 등록되었습니다.');
-      setForm({ name: '', slug: '', description: '' });
+      setForm({ name: '', slug: '', description: '', imageUrl: '' });
       load();
     } catch (err: any) { toast.error(err.message); }
     finally { setSaving(false); }
@@ -67,12 +86,12 @@ export default function AdminCategoriesPage() {
 
   const startEdit = (c: Category) => {
     setEditingId(c.id);
-    setEditForm({ name: c.name, slug: c.slug, description: c.description ?? '' });
+    setEditForm({ name: c.name, slug: c.slug, description: c.description ?? '', imageUrl: c.imageUrl ?? '' });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditForm({ name: '', slug: '', description: '' });
+    setEditForm({ name: '', slug: '', description: '', imageUrl: '' });
   };
 
   const handleEditSave = async (id: string) => {
@@ -80,7 +99,7 @@ export default function AdminCategoriesPage() {
     if (!editForm.slug.trim()) { toast.error('슬러그를 입력해주세요.'); return; }
     setEditSaving(true);
     try {
-      await api.patch(`/categories/${id}`, editForm);
+      await api.patch(`/categories/${id}`, { ...editForm, imageUrl: editForm.imageUrl || null });
       toast.success('수정되었습니다.');
       setEditingId(null);
       load();
@@ -166,6 +185,27 @@ export default function AdminCategoriesPage() {
               className="mt-1"
             />
           </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700">카테고리 이미지 <span className="text-gray-400 font-normal">(선택)</span></label>
+            <div className="mt-1 flex items-center gap-3">
+              {form.imageUrl ? (
+                <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-200 shrink-0">
+                  <img src={form.imageUrl} alt="" className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => setForm(f => ({ ...f, imageUrl: '' }))}
+                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              ) : (
+                <label className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:border-blue-300 shrink-0">
+                  <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'create')} disabled={uploading} />
+                  <ImageIcon className="w-5 h-5 text-gray-300" />
+                  <span className="text-[10px] text-gray-400 mt-0.5">{uploading ? '...' : '업로드'}</span>
+                </label>
+              )}
+              <p className="text-xs text-gray-400">없으면 기본 아이콘이 표시됩니다</p>
+            </div>
+          </div>
           <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={saving}>
             <Plus className="w-4 h-4 mr-1" />{saving ? '등록 중...' : '등록'}
           </Button>
@@ -248,6 +288,27 @@ export default function AdminCategoriesPage() {
                         className="mt-0.5 h-8 text-sm"
                         placeholder="(선택)"
                       />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500">이미지</label>
+                      <div className="mt-0.5 flex items-center gap-2">
+                        {editForm.imageUrl ? (
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                            <img src={editForm.imageUrl} alt="" className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => setEditForm(f => ({ ...f, imageUrl: '' }))}
+                              className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                              <X className="w-3 h-3 text-white" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="w-12 h-12 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:border-blue-300 shrink-0">
+                            <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'edit')} disabled={editUploading} />
+                            <ImageIcon className="w-4 h-4 text-gray-300" />
+                            <span className="text-[9px] text-gray-400">{editUploading ? '...' : '업로드'}</span>
+                          </label>
+                        )}
+                        <p className="text-xs text-gray-400">없으면 기본 아이콘</p>
+                      </div>
                     </div>
                     <div className="flex gap-2 pt-1">
                       <Button
