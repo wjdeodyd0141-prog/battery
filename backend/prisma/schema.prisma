@@ -151,6 +151,7 @@ model Order {
   mileageUsed       Int         @default(0)
   couponDiscount    Int         @default(0)
   usedCouponId      String?
+  paymentMethod     String?
   returnStatus      String?
   returnType        String?
   returnReason      String?

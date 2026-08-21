@@ -137,6 +137,8 @@ export interface Order {
   carrier: string | null;
   adminMemo: string | null;
   mileageUsed?: number;
+  couponDiscount?: number;
+  paymentMethod?: string | null;
   returnStatus?: 'REQUESTED' | 'APPROVED' | 'REJECTED';
   returnType?: 'RETURN' | 'EXCHANGE';
   returnReason?: string;

@@ -175,9 +175,29 @@ export class OrdersService {
         });
       }
 
+      // Toss API에서 결제 수단 조회
+      let paymentMethod: string | null = null;
+      try {
+        const tossSecretKey = this.configService.get<string>('TOSS_SECRET_KEY') ?? '';
+        const encodedKey = Buffer.from(`${tossSecretKey}:`).toString('base64');
+        const tossRes = await fetch(`https://api.tosspayments.com/v1/payments/${paymentKey}`, {
+          headers: { Authorization: `Basic ${encodedKey}` },
+        });
+        if (tossRes.ok) {
+          const tossData = await tossRes.json();
+          if (tossData.method === '카드' && tossData.card?.company) {
+            paymentMethod = `${tossData.card.company} (카드)`;
+          } else if (tossData.method === '간편결제' && tossData.easyPay?.provider) {
+            paymentMethod = `${tossData.easyPay.provider} (간편결제)`;
+          } else if (tossData.method) {
+            paymentMethod = tossData.method;
+          }
+        }
+      } catch {}
+
       return tx.order.update({
         where: { id: orderId },
-        data: { status: 'PAID', paymentKey, paidAt: new Date() },
+        data: { status: 'PAID', paymentKey, paidAt: new Date(), ...(paymentMethod ? { paymentMethod } : {}) },
         include: { items: { include: { product: true } } },
       });
     });

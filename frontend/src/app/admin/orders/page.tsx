@@ -425,9 +425,21 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
                   <p className="text-sm font-bold text-gray-900 shrink-0">{fmt((item.price + item.optionPrice) * item.quantity)}</p>
                 </div>
               ))}
+              {(order.mileageUsed ?? 0) > 0 && (
+                <div className="flex justify-between items-center px-1 text-sm text-emerald-600">
+                  <span>마일리지 사용</span>
+                  <span>-{fmt(order.mileageUsed ?? 0)}</span>
+                </div>
+              )}
+              {(order.couponDiscount ?? 0) > 0 && (
+                <div className="flex justify-between items-center px-1 text-sm text-violet-600">
+                  <span>쿠폰 할인</span>
+                  <span>-{fmt(order.couponDiscount ?? 0)}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center pt-1 px-1">
-                <span className="text-sm text-gray-500">총 결제 금액</span>
-                <span className="text-base font-bold text-blue-600">{fmt(order.totalAmount)}</span>
+                <span className="text-sm text-gray-500">최종 결제 금액</span>
+                <span className="text-base font-bold text-blue-600">{fmt(order.totalAmount - (order.mileageUsed ?? 0) - (order.couponDiscount ?? 0))}</span>
               </div>
             </div>
           </section>
@@ -469,11 +481,36 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
                 </div>
               </div>
             </div>
-            {order.paymentKey && (
-              <div className="mt-3 p-3 bg-gray-50 rounded-xl flex items-center gap-2 text-sm">
-                <CreditCard className="w-3.5 h-3.5 text-gray-400" />
-                <span className="text-gray-500">결제키</span>
-                <span className="font-mono text-xs text-gray-600 break-all">{order.paymentKey}</span>
+            {(order.paymentKey || order.paymentMethod || (order.mileageUsed ?? 0) > 0 || (order.couponDiscount ?? 0) > 0) && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-xl space-y-2 text-sm">
+                {order.paymentKey && (
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <span className="text-gray-500 shrink-0">결제키</span>
+                    <span className="font-mono text-xs text-gray-600 break-all">{order.paymentKey}</span>
+                  </div>
+                )}
+                {order.paymentMethod && (
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                    <span className="text-gray-500 shrink-0">결제 수단</span>
+                    <span className="font-medium text-gray-800">{order.paymentMethod}</span>
+                  </div>
+                )}
+                {(order.mileageUsed ?? 0) > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 shrink-0 text-center text-emerald-500 text-xs font-bold">M</span>
+                    <span className="text-gray-500 shrink-0">마일리지 사용</span>
+                    <span className="font-medium text-emerald-600">-{fmt(order.mileageUsed ?? 0)}</span>
+                  </div>
+                )}
+                {(order.couponDiscount ?? 0) > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 shrink-0 text-center text-violet-500 text-xs font-bold">C</span>
+                    <span className="text-gray-500 shrink-0">쿠폰 할인</span>
+                    <span className="font-medium text-violet-600">-{fmt(order.couponDiscount ?? 0)}</span>
+                  </div>
+                )}
               </div>
             )}
           </section>
