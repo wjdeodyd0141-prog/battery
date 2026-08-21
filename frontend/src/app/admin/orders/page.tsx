@@ -625,17 +625,22 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
 
 // ─── CSV 다운로드 ─────────────────────────────────────────
 function downloadCSV(orders: Order[], year: number, month: number) {
-  const headers = ['주문번호', '주문일', '받는분', '연락처', '상품', '수량', '단가', '금액', '상태', '배송사', '운송장'];
+  const headers = ['주문번호', '주문일', '받는분', '연락처', '상품', '수량', '단가', '상품금액', '마일리지사용', '쿠폰할인', '실결제금액', '결제수단', '상태', '배송사', '운송장'];
   const rows = orders.flatMap(o =>
-    o.items.map(item => [
+    o.items.map((item, idx) => [
       `#${shortId(o.id)}`,
       new Date(o.createdAt).toLocaleDateString('ko-KR'),
       o.receiverName,
       o.receiverPhone,
       item.product?.name ?? '-',
       item.quantity,
-      item.price,
-      item.price * item.quantity,
+      item.price + item.optionPrice,
+      (item.price + item.optionPrice) * item.quantity,
+      // 마일리지·쿠폰·실결제금액·결제수단은 첫 번째 아이템 행에만 표시
+      idx === 0 ? (o.mileageUsed ?? 0) : '',
+      idx === 0 ? (o.couponDiscount ?? 0) : '',
+      idx === 0 ? o.totalAmount - (o.mileageUsed ?? 0) - (o.couponDiscount ?? 0) : '',
+      idx === 0 ? (o.paymentMethod ?? '-') : '',
       STATUS_META[o.status]?.label ?? o.status,
       o.carrier ?? '-',
       o.trackingNumber ?? '-',
@@ -910,7 +915,12 @@ export default function AdminOrdersPage() {
                         <p className="text-xs text-gray-400">{order.receiverPhone}</p>
                       </div>
 
-                      <div className="text-sm font-bold text-gray-900">{fmt(order.totalAmount)}</div>
+                      <div className="text-sm font-bold text-gray-900">
+                        {fmt(order.totalAmount - (order.mileageUsed ?? 0) - (order.couponDiscount ?? 0))}
+                        {((order.mileageUsed ?? 0) > 0 || (order.couponDiscount ?? 0) > 0) && (
+                          <p className="text-xs text-gray-400 font-normal line-through">{fmt(order.totalAmount)}</p>
+                        )}
+                      </div>
 
                       <div>
                         <StatusBadge status={order.status} />

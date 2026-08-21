@@ -734,16 +734,20 @@ export class OrdersService {
       this.prisma.order.groupBy({ by: ['status'], where, _count: { _all: true } }),
       this.prisma.order.aggregate({
         where: { ...where, status: { in: ['PAID', 'PREPARING', 'SHIPPED', 'DELIVERED'] } },
-        _sum: { totalAmount: true },
+        _sum: { totalAmount: true, mileageUsed: true, couponDiscount: true },
       }),
     ]);
 
     const statusMap: Record<string, number> = {};
     byStatus.forEach(s => { statusMap[s.status] = s._count._all; });
 
+    const grossRevenue = revenue._sum.totalAmount ?? 0;
+    const totalMileageUsed = revenue._sum.mileageUsed ?? 0;
+    const totalCouponDiscount = revenue._sum.couponDiscount ?? 0;
+
     return {
       total,
-      revenue: revenue._sum.totalAmount ?? 0,
+      revenue: grossRevenue - totalMileageUsed - totalCouponDiscount,
       byStatus: statusMap,
     };
   }
@@ -763,7 +767,7 @@ export class OrdersService {
             createdAt: { gte: monthStart, lt: nextMonth },
             status: { in: ['PAID', 'PREPARING', 'SHIPPED', 'DELIVERED'] },
           },
-          _sum: { totalAmount: true },
+          _sum: { totalAmount: true, mileageUsed: true, couponDiscount: true },
         }),
         this.prisma.order.count({ where: { status: 'PENDING' } }),
         this.prisma.inquiry.count({ where: { status: 'PENDING' } }),
@@ -778,7 +782,7 @@ export class OrdersService {
     return {
       todayOrders,
       monthOrders,
-      monthRevenue: monthRevenue._sum.totalAmount ?? 0,
+      monthRevenue: (monthRevenue._sum.totalAmount ?? 0) - (monthRevenue._sum.mileageUsed ?? 0) - (monthRevenue._sum.couponDiscount ?? 0),
       pendingOrders,
       unansweredInquiries,
       lowStockProducts,
