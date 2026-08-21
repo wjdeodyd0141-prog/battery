@@ -415,9 +415,14 @@ function OrderDetailModal({ order, onClose, onUpdate }: {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{item.product?.name ?? '상품 정보 없음'}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{item.quantity}개 × {fmt(item.price)}</p>
+                    {item.selectedOptions?.length > 0 && (
+                      <p className="text-xs text-blue-600 mt-0.5">
+                        {item.selectedOptions.map(o => `${o.groupName}: ${o.optionName}`).join(' / ')}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-0.5">{item.quantity}개 × {fmt(item.price + item.optionPrice)}</p>
                   </div>
-                  <p className="text-sm font-bold text-gray-900 shrink-0">{fmt(item.price * item.quantity)}</p>
+                  <p className="text-sm font-bold text-gray-900 shrink-0">{fmt((item.price + item.optionPrice) * item.quantity)}</p>
                 </div>
               ))}
               <div className="flex justify-between items-center pt-1 px-1">
