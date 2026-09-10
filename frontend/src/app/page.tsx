@@ -176,7 +176,7 @@ export default async function HomePage() {
                   href={`/products?categoryId=${cat.id}`}
                   className="group bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 flex flex-col items-center gap-3 hover:border-blue-400 hover:shadow-md transition-all duration-200"
                 >
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl group-hover:bg-blue-100 group-hover:scale-110 transition-all duration-200 overflow-hidden">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-blue-50 rounded-2xl flex items-center justify-center text-4xl group-hover:bg-blue-100 group-hover:scale-110 transition-all duration-200 overflow-hidden">
                     {cat.imageUrl
                       ? <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover" />
                       : (CATEGORY_ICONS[cat.name?.toLowerCase()] ?? CATEGORY_ICONS.default)}
