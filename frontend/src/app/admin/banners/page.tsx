@@ -196,7 +196,7 @@ export default function AdminBannersPage() {
                       <ImageIcon className="w-8 h-8" />
                       <span className="text-sm">클릭하여 배너 이미지 업로드</span>
                       <span className="text-xs">JPG·PNG·WebP / 최대 5MB / 자동 WebP 압축</span>
-                      <span className="text-xs text-blue-400">권장 사이즈: 1920 × 300px</span>
+                      <span className="text-xs text-blue-400">권장 사이즈: 1920 × 600px (모든 화면에서 이 비율로 표시됩니다)</span>
                     </>
                   )}
                 </button>
