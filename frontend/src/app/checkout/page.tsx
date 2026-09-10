@@ -55,21 +55,23 @@ export default function CheckoutPage() {
   const totalAmount = cart?.items.reduce((sum, item) => sum + (item.product.price + (item.optionPrice ?? 0)) * item.quantity, 0) ?? 0;
   const shippingFee = 0;
   const orderTotal = totalAmount + shippingFee;
+  const couponEligibleTotal = cart?.items.reduce((sum, item) => item.product.couponEligible ? sum + (item.product.price + (item.optionPrice ?? 0)) * item.quantity : sum, 0) ?? 0;
+  const mileageEligibleTotal = cart?.items.reduce((sum, item) => item.product.mileageEligible ? sum + (item.product.price + (item.optionPrice ?? 0)) * item.quantity : sum, 0) ?? 0;
 
   const couponDiscount = (() => {
     if (!selectedCoupon) return 0;
     const c = selectedCoupon.coupon;
     if (c.discountType === 'PERCENT') {
-      const raw = Math.floor(orderTotal * c.discountValue / 100);
+      const raw = Math.floor(couponEligibleTotal * c.discountValue / 100);
       return c.maxDiscountAmount ? Math.min(raw, c.maxDiscountAmount) : raw;
     }
-    return Math.min(Math.floor(c.discountValue), orderTotal);
+    return Math.min(Math.floor(c.discountValue), couponEligibleTotal);
   })();
 
   const MILEAGE_MIN_ORDER = 50000;
-  const mileageAvailable = orderTotal >= MILEAGE_MIN_ORDER;
+  const mileageAvailable = orderTotal >= MILEAGE_MIN_ORDER && mileageEligibleTotal > 0;
   const afterCoupon = orderTotal - couponDiscount;
-  const mileageUsed = mileageAvailable ? Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, afterCoupon)) : 0;
+  const mileageUsed = mileageAvailable ? Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, afterCoupon, mileageEligibleTotal)) : 0;
   const finalAmount = afterCoupon - mileageUsed;
 
   useEffect(() => {
@@ -225,7 +227,15 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium line-clamp-1">{item.product.name}</p>
-                      <p className="text-xs text-gray-400">{item.quantity}개</p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-xs text-gray-400">{item.quantity}개</p>
+                        {!item.product.couponEligible && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">쿠폰 불가</span>
+                        )}
+                        {!item.product.mileageEligible && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">마일리지 불가</span>
+                        )}
+                      </div>
                     </div>
                     <p className="text-sm font-semibold shrink-0">{((item.product.price + (item.optionPrice ?? 0)) * item.quantity).toLocaleString()}원</p>
                   </div>
@@ -308,9 +318,12 @@ export default function CheckoutPage() {
                       >
                         쿠폰 사용 안함
                       </button>
+                      {couponEligibleTotal === 0 && (
+                        <p className="text-xs text-red-400 px-1">쿠폰 적용이 불가능한 상품만 담겨 있어 쿠폰을 사용할 수 없습니다.</p>
+                      )}
                       {coupons.map((uc: any) => {
                         const c = uc.coupon;
-                        const usable = orderTotal >= c.minOrderAmount;
+                        const usable = couponEligibleTotal >= c.minOrderAmount;
                         const discountLabel = c.discountType === 'PERCENT'
                           ? `${c.discountValue}% 할인${c.maxDiscountAmount ? ` (최대 ${c.maxDiscountAmount.toLocaleString()}원)` : ''}`
                           : `${Math.floor(c.discountValue).toLocaleString()}원 할인`;
@@ -330,7 +343,7 @@ export default function CheckoutPage() {
                           >
                             <p className="font-medium">{c.name}</p>
                             <p className="text-xs mt-0.5 opacity-75">{discountLabel}</p>
-                            {!usable && <p className="text-xs text-red-400 mt-0.5">최소 주문 {c.minOrderAmount.toLocaleString()}원 이상</p>}
+                            {!usable && <p className="text-xs text-red-400 mt-0.5">최소 주문 {c.minOrderAmount.toLocaleString()}원 이상 (쿠폰 적용 가능 상품 기준)</p>}
                             {c.expiresAt && <p className="text-xs opacity-60 mt-0.5">{new Date(c.expiresAt).toLocaleDateString()} 까지</p>}
                           </button>
                         );
@@ -356,16 +369,21 @@ export default function CheckoutPage() {
                   {mileageAvailable ? (
                     <>
                       <div className="flex gap-2">
-                        <Input type="number" min={0} max={Math.min(mileageBalance, afterCoupon)} value={mileageInput}
+                        <Input type="number" min={0} max={Math.min(mileageBalance, afterCoupon, mileageEligibleTotal)} value={mileageInput}
                           onChange={e => setMileageInput(e.target.value)} placeholder="0" className="h-8 text-sm bg-white" />
                         <Button type="button" variant="outline" size="sm"
                           className="shrink-0 text-emerald-600 border-emerald-300 hover:bg-emerald-50"
-                          onClick={() => setMileageInput(String(Math.min(mileageBalance, afterCoupon)))}>
+                          onClick={() => setMileageInput(String(Math.min(mileageBalance, afterCoupon, mileageEligibleTotal)))}>
                           전액 사용
                         </Button>
                       </div>
                       {mileageUsed > 0 && <p className="text-xs text-emerald-600 mt-1.5">-{mileageUsed.toLocaleString()}원 할인 적용</p>}
+                      {mileageEligibleTotal < orderTotal && (
+                        <p className="text-xs text-gray-400 mt-1.5">마일리지 적용 불가 상품이 포함되어 있어 최대 {mileageEligibleTotal.toLocaleString()}원까지 사용 가능합니다.</p>
+                      )}
                     </>
+                  ) : mileageEligibleTotal === 0 ? (
+                    <p className="text-xs text-gray-400">마일리지 적용이 불가능한 상품만 담겨 있어 사용할 수 없습니다</p>
                   ) : (
                     <p className="text-xs text-gray-400">5만원 이상 구매 시 사용 가능합니다</p>
                   )}

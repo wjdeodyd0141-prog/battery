@@ -318,7 +318,7 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState({
     name: '', slug: `prod-${Date.now()}`, description: '', price: '', stock: '',
-    categoryId: '', isActive: true,
+    categoryId: '', isActive: true, couponEligible: true, mileageEligible: true,
   });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [detailImageUrls, setDetailImageUrls] = useState<string[]>([]);
@@ -336,6 +336,7 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
         description: product.description || '',
         price: String(product.price), stock: String(product.stock),
         categoryId: product.categoryId, isActive: product.isActive,
+        couponEligible: product.couponEligible ?? true, mileageEligible: product.mileageEligible ?? true,
       });
       setImageUrls(product.imageUrls);
       setDetailImageUrls(product.detailImageUrls);
@@ -369,6 +370,7 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
         specs: Object.keys(filteredSpecs).length > 0 ? filteredSpecs : null,
         mileageRate: mileageRate !== '' ? Number(mileageRate) : null,
         categoryId: form.categoryId, isActive: form.isActive,
+        couponEligible: form.couponEligible, mileageEligible: form.mileageEligible,
       };
       if (product) {
         await api.patch(`/products/${product.id}`, data);
@@ -464,6 +466,20 @@ export default function ProductFormModal({ product, onClose, onSaved }: Props) {
                   <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${form.isActive ? 'left-5' : 'left-1'}`} />
                 </button>
                 <span className="text-sm text-gray-700">판매 활성화</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setForm(f => ({ ...f, couponEligible: !f.couponEligible }))}
+                  className={`w-10 h-6 rounded-full transition-colors relative ${form.couponEligible ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                  <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${form.couponEligible ? 'left-5' : 'left-1'}`} />
+                </button>
+                <span className="text-sm text-gray-700">쿠폰 사용 가능</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setForm(f => ({ ...f, mileageEligible: !f.mileageEligible }))}
+                  className={`w-10 h-6 rounded-full transition-colors relative ${form.mileageEligible ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                  <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${form.mileageEligible ? 'left-5' : 'left-1'}`} />
+                </button>
+                <span className="text-sm text-gray-700">마일리지 사용 가능</span>
               </div>
               {/* 제품 스펙 */}
               <div>

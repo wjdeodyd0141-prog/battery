@@ -127,6 +127,17 @@ export default async function ProductDetailPage({ params }: PageProps) {
               )}
             </div>
 
+            {(!product.couponEligible || !product.mileageEligible) && (
+              <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                {!product.couponEligible && (
+                  <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-500">쿠폰 적용 불가 상품</span>
+                )}
+                {!product.mileageEligible && (
+                  <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-500">마일리지 사용 불가 상품</span>
+                )}
+              </div>
+            )}
+
             {product.description && (
               <>
                 <Separator />

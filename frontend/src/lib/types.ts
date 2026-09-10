@@ -74,6 +74,8 @@ export interface Product {
   mileageRate: number | null;
   isActive: boolean;
   isFeatured: boolean;
+  couponEligible: boolean;
+  mileageEligible: boolean;
   categoryId: string;
   category: Category;
   optionGroups?: ProductOptionGroup[];

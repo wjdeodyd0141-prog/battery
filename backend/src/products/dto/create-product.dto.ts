@@ -48,4 +48,12 @@ export class CreateProductDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  couponEligible?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  mileageEligible?: boolean;
 }

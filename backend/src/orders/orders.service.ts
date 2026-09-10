@@ -47,6 +47,8 @@ export class OrdersService {
     });
 
     let itemsTotal = 0;
+    let couponEligibleTotal = 0;
+    let mileageEligibleTotal = 0;
     const orderItems = dto.items.map(item => {
       const product = products.find(p => p.id === item.productId);
       if (!product) throw new NotFoundException(`상품 ${item.productId}을 찾을 수 없습니다.`);
@@ -63,7 +65,10 @@ export class OrdersService {
         }
       }
 
-      itemsTotal += (product.price + serverOptionPrice) * item.quantity;
+      const lineTotal = (product.price + serverOptionPrice) * item.quantity;
+      itemsTotal += lineTotal;
+      if (product.couponEligible) couponEligibleTotal += lineTotal;
+      if (product.mileageEligible) mileageEligibleTotal += lineTotal;
       return {
         productId: item.productId,
         quantity: item.quantity,
@@ -82,6 +87,7 @@ export class OrdersService {
     const mileageUsed = Math.max(0, Math.floor(rawMileage));
     if (mileageUsed > 0 && totalAmount < 50000) throw new BadRequestException('5만원 이상 구매 시 마일리지를 사용할 수 있습니다.');
     if (mileageUsed > totalAmount) throw new BadRequestException('마일리지 사용 금액이 주문 금액을 초과합니다.');
+    if (mileageUsed > mileageEligibleTotal) throw new BadRequestException('마일리지 적용이 불가능한 상품이 포함되어 있어 사용 가능 금액을 초과했습니다.');
 
     // 쿠폰 검증 및 할인 계산 (트랜잭션 외부에서 미리 조회)
     let couponDiscount = 0;
@@ -95,13 +101,14 @@ export class OrdersService {
       const coupon = userCoupon.coupon;
       if (!coupon.isActive) throw new BadRequestException('비활성화된 쿠폰입니다.');
       if (coupon.expiresAt && coupon.expiresAt < new Date()) throw new BadRequestException('만료된 쿠폰입니다.');
-      if (totalAmount < coupon.minOrderAmount) throw new BadRequestException(`최소 주문 금액 ${coupon.minOrderAmount.toLocaleString()}원 이상 시 사용 가능합니다.`);
+      if (couponEligibleTotal === 0) throw new BadRequestException('쿠폰 적용이 불가능한 상품만 담겨 있어 쿠폰을 사용할 수 없습니다.');
+      if (couponEligibleTotal < coupon.minOrderAmount) throw new BadRequestException(`최소 주문 금액 ${coupon.minOrderAmount.toLocaleString()}원 이상 시 사용 가능합니다.`);
 
       if (coupon.discountType === 'PERCENT') {
-        const raw = Math.floor(totalAmount * coupon.discountValue / 100);
+        const raw = Math.floor(couponEligibleTotal * coupon.discountValue / 100);
         couponDiscount = coupon.maxDiscountAmount ? Math.min(raw, coupon.maxDiscountAmount) : raw;
       } else {
-        couponDiscount = Math.min(Math.floor(coupon.discountValue), totalAmount);
+        couponDiscount = Math.min(Math.floor(coupon.discountValue), couponEligibleTotal);
       }
       userCouponId = userCoupon.id;
     }

@@ -97,6 +97,8 @@ model Product {
   mileageRate     Float?
   isActive        Boolean  @default(true)
   isFeatured      Boolean  @default(false)
+  couponEligible  Boolean  @default(true)
+  mileageEligible Boolean  @default(true)
   categoryId  String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
