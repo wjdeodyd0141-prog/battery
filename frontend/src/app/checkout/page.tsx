@@ -69,7 +69,7 @@ export default function CheckoutPage() {
   })();
 
   const MILEAGE_MIN_ORDER = 50000;
-  const mileageAvailable = orderTotal >= MILEAGE_MIN_ORDER && mileageEligibleTotal > 0;
+  const mileageAvailable = mileageEligibleTotal >= MILEAGE_MIN_ORDER;
   const afterCoupon = orderTotal - couponDiscount;
   const mileageUsed = mileageAvailable ? Math.min(Math.max(0, Number(mileageInput) || 0), Math.min(mileageBalance, afterCoupon, mileageEligibleTotal)) : 0;
   const finalAmount = afterCoupon - mileageUsed;
@@ -385,7 +385,7 @@ export default function CheckoutPage() {
                   ) : mileageEligibleTotal === 0 ? (
                     <p className="text-xs text-gray-400">마일리지 적용이 불가능한 상품만 담겨 있어 사용할 수 없습니다</p>
                   ) : (
-                    <p className="text-xs text-gray-400">5만원 이상 구매 시 사용 가능합니다</p>
+                    <p className="text-xs text-gray-400">마일리지 적용 가능 상품 금액이 5만원 이상일 때 사용 가능합니다 (현재 {mileageEligibleTotal.toLocaleString()}원)</p>
                   )}
                 </div>
               )}

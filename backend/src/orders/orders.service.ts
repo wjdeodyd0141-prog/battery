@@ -85,7 +85,7 @@ export class OrdersService {
     const rawMileage = dto.mileageUsed ?? 0;
     if (!Number.isFinite(rawMileage)) throw new BadRequestException('유효하지 않은 마일리지 값입니다.');
     const mileageUsed = Math.max(0, Math.floor(rawMileage));
-    if (mileageUsed > 0 && totalAmount < 50000) throw new BadRequestException('5만원 이상 구매 시 마일리지를 사용할 수 있습니다.');
+    if (mileageUsed > 0 && mileageEligibleTotal < 50000) throw new BadRequestException('마일리지 적용 가능 상품 금액이 5만원 이상일 때 사용할 수 있습니다.');
     if (mileageUsed > totalAmount) throw new BadRequestException('마일리지 사용 금액이 주문 금액을 초과합니다.');
     if (mileageUsed > mileageEligibleTotal) throw new BadRequestException('마일리지 적용이 불가능한 상품이 포함되어 있어 사용 가능 금액을 초과했습니다.');
 
