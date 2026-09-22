@@ -406,8 +406,11 @@ export class OrdersService {
       include: { items: true },
     });
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
-    if (order.status !== 'PAID' && order.status !== 'PREPARING') {
-      throw new BadRequestException('결제 완료 또는 준비 중 상태의 주문만 취소할 수 있습니다.');
+    if (order.status === 'PREPARING') {
+      throw new BadRequestException('상품 준비 중인 주문은 직접 취소할 수 없습니다. 고객센터로 문의해주세요.');
+    }
+    if (order.status !== 'PAID') {
+      throw new BadRequestException('결제 완료 상태의 주문만 취소할 수 있습니다.');
     }
 
     // 토스 결제 취소 API 호출

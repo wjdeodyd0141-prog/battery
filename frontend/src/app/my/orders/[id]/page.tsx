@@ -316,8 +316,15 @@ export default function OrderDetailPage() {
           </div>
         )}
 
+        {order.status === 'PREPARING' && (
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center">
+            <p className="text-sm text-gray-600">상품 준비 중인 주문은 직접 취소할 수 없습니다.</p>
+            <p className="text-xs text-gray-400 mt-1">취소를 원하시면 고객센터(02-2668-3799, 10시~19시)로 문의해주세요.</p>
+          </div>
+        )}
+
         {/* 주문 취소 */}
-        {(order.status === 'PAID' || order.status === 'PREPARING') && (
+        {order.status === 'PAID' && (
           <div>
             {!showCancelConfirm ? (
               <button

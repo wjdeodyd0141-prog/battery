@@ -13,7 +13,8 @@ export default function RefundPage() {
         <section>
           <h2 className="text-base font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">주문 취소</h2>
           <ul className="space-y-2">
-            <li className="flex gap-2"><span className="text-gray-400 shrink-0">·</span><span>결제 완료 후 배송 준비 전: 100% 취소 가능</span></li>
+            <li className="flex gap-2"><span className="text-gray-400 shrink-0">·</span><span>결제 완료 후 배송 준비 전: 마이페이지에서 직접 100% 취소 가능</span></li>
+            <li className="flex gap-2"><span className="text-gray-400 shrink-0">·</span><span>상품 준비 중: 직접 취소 불가 — 고객센터로 문의 (이미 출고된 경우 수령 후 반품으로 처리)</span></li>
             <li className="flex gap-2"><span className="text-gray-400 shrink-0">·</span><span>배송 중: 취소 불가 — 수령 후 반품으로 처리</span></li>
           </ul>
         </section>
